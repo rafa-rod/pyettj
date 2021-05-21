@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "pyettj"
+version = "0.1.0"
+description = "\"Capturar dados das estruturas a termo de algumas taxas de juros (ettj) brasileiras.\""
+authors = ["Rafael Rodrigues"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pandas = "^1.2.4"
+beautifulsoup4 = "^4.9.3"
+requests = "^2.25.1"
+matplotlib = "^3.4.2"
+pytest = "^6.2.4"
+lxml = "^4.6.3"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
