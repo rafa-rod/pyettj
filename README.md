@@ -6,9 +6,9 @@
     <a href="https://opensource.org/licenses/MIT">
         <img src="https://img.shields.io/badge/license-MIT-brightgreen.svg"
             alt="MIT license"></a> &nbsp;
-    <a href="https://codecov.io/gh/rafa-rod/pyettj">
+      <a href="https://codecov.io/gh/rafa-rod/pyettj">
         <img src="https://codecov.io/gh/rafa-rod/pyettj/branch/master/graph/badge.svg?token=TRU9VIoqZB"/>
-    </a>
+      </a>
 </p>
 
 <!-- content -->
