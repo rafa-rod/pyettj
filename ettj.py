@@ -15,13 +15,31 @@ pd.set_option('display.max_rows',100)
 pd.set_option('display.max_columns',10)
 pd.set_option('display.width',1000)
 
+def _treat_parameters(data):
+    '''Checking all parameters and access to web data'''
+    if isinstance(data, str)==False:
+        raise ValueError("O parametro data deve ser em formato string, exemplo: '18/05/2021'")
+    elif isinstance(data, str):
+        try:
+            data = pd.to_datetime(data).strftime("%d/%m/%Y")
+            return data
+        except:
+            raise ValueError("O parametro data deve ser em formato string, exemplo: '18/05/2021'")   
+
 def get_ettj(data):
-    data = pd.to_datetime(data).strftime("%d/%m/%Y")
+    start = time.time()
+
+    data = _treat_parameters(data)
+
+    #data = pd.to_datetime(data).strftime("%d/%m/%Y")
     curva = "TODOS"
     url = "http://www2.bmf.com.br/pages/portal/bmfbovespa/boletim1/TxRef1.asp?Data={}&Data1=20060201&slcTaxa={}".format(data,curva)
 
-    page = requests.get(url)
-    pagetext = page.text
+    try:
+        page = requests.get(url)
+        pagetext = page.text
+    except:
+        raise Exception("Não foi possível conectar ao website. Tente novamente mais tarde.")
 
     soup = BeautifulSoup(pagetext, 'lxml')
     table1 = soup.find_all('table')[1]
@@ -36,15 +54,10 @@ def get_ettj(data):
 
     final_table_pandas = pd.concat([pandas_table1, pandas_table2, pandas_table3, pandas_table4], axis=1)
     final_table_pandas["Data"] = data
-
+    print("Curvas capturadas em {} segundos.".format(round(time.time()-start,2)))
     return final_table_pandas
 
-start = time.time()
-data = "2021/05/18"
-ettj = get_ettj(data)#.to_excel("ettj.xlsx")
-print("Curvas capturadas em {} segundos.".format(round(time.time()-start,2)))
-
-def plot_ettj(ettj, curva, data):
+def plot_ettj(ettj, curva, data): #pragma: no cover
     ettj_ = ettj.copy()
     data = pd.to_datetime(data).strftime("%d/%m/%Y")
     ettj_ = ettj_[ettj_.Data==data]
@@ -58,11 +71,4 @@ def plot_ettj(ettj, curva, data):
     plt.tight_layout()
     plt.legend('')
     plt.show()
-
-import pandas as pd
-#ettj = pd.read_excel("C:\\Users\\rrafa\\Desktop\\pyettj\\exemplo\\ettj.xlsx", index_col=0)
-curvas = ettj.columns.tolist()[1:]
-curva = curvas[2]
-data = "2021/05/18"
-
-plot_ettj(ettj.drop(ettj.columns[0],axis=1), curva, data)
+    print("finished")
