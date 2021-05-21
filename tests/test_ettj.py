@@ -13,7 +13,7 @@ class TestClass():
     def test_ettj(self):
         self.ettj_dataframe = ettj.get_ettj(data)
         self.curvas = self.ettj_dataframe.columns.tolist()[1:]
-        self.curva = self.curvas[-2] #libor
+        self.curva = self.curvas[2] #selic
         return self.ettj_dataframe, self.curva
 
     def test_plot_ettj(self):

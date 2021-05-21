@@ -71,4 +71,3 @@ def plot_ettj(ettj, curva, data): #pragma: no cover
     plt.tight_layout()
     plt.legend('')
     plt.show()
-    print("finished")
