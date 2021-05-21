@@ -6,9 +6,9 @@
     <a href="https://opensource.org/licenses/MIT">
         <img src="https://img.shields.io/badge/license-MIT-brightgreen.svg"
             alt="MIT license"></a> &nbsp;
-      <a href="https://codecov.io/gh/rafa-rod/detecttrend">
-        <img src="https://codecov.io/gh/rafa-rod/detecttrend/branch/main/graph/badge.svg?token=98EMCTZTOY"/>
-      </a>
+    <a href="https://codecov.io/gh/rafa-rod/pyettj">
+        <img src="https://codecov.io/gh/rafa-rod/pyettj/branch/master/graph/badge.svg?token=TRU9VIoqZB"/>
+    </a>
 </p>
 
 <!-- content -->
@@ -20,7 +20,7 @@ Para caputar os dados, basta informar a data:
 '''python
 from pyettj import ettj
 data = '18/05/2021'
-ettj.get_ettj(data)
+ettj_dataframe = ettj.get_ettj(data)
 '''
 
 Todas as curvas disponíveis são disponibilizadas, para selecionar a desejada basta filtrar o `panda.DataFrame` resultante.
@@ -28,5 +28,10 @@ Todas as curvas disponíveis são disponibilizadas, para selecionar a desejada b
 E para plotar o gráfico da curva, invoque a função de plotagem da biblioteca:
 
 '''python
-
+curva = "DI x pré"
+ettj.plot_ettj(ettj_dataframe, curva, data)
 '''
+
+<center>
+<img src="https://github.com/rafa-rod/pyettj/blob/main/media/pre.png" style="width:60%;"/>
+</center>
