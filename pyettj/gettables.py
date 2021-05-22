@@ -4,9 +4,9 @@ Created on Fri May 21 09:30:26 2021
 
 @author: RRAFA
 """
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup # type: ignore
 import requests
-import pandas as pd
+import pandas as pd # type: ignore
 
 pd.set_option('display.float_format', lambda x: '%.5f' % x)
 pd.set_option('display.max_rows',100)

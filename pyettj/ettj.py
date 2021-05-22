@@ -4,11 +4,11 @@ Created on Fri May 21 09:30:26 2021
 
 @author: RRAFA
 """
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup # type: ignore
 import requests, time
-import pandas as pd
-import matplotlib.pyplot as plt; plt.style.use('fivethirtyeight')
-import get_all_tables
+import pandas as pd # type: ignore
+import matplotlib.pyplot as plt; plt.style.use('fivethirtyeight') # type: ignore
+from pyettj import gettables
 
 pd.set_option('display.float_format', lambda x: '%.5f' % x)
 pd.set_option('display.max_rows',100)
@@ -47,10 +47,10 @@ def get_ettj(data):
     table3 = soup.find_all('table')[3]
     table4 = soup.find_all('table')[4]
 
-    pandas_table1 = get_all_tables.get_first_table(table1)
-    pandas_table2 = get_all_tables.get_second_table(table2)
-    pandas_table3 = get_all_tables.get_third_table(table3)
-    pandas_table4 = get_all_tables.get_fourth_table(table4)
+    pandas_table1 = gettables.get_first_table(table1)
+    pandas_table2 = gettables.get_second_table(table2)
+    pandas_table3 = gettables.get_third_table(table3)
+    pandas_table4 = gettables.get_fourth_table(table4)
 
     final_table_pandas = pd.concat([pandas_table1, pandas_table2, pandas_table3, pandas_table4], axis=1)
     final_table_pandas["Data"] = data
