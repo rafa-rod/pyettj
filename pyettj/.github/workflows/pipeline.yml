@@ -10,10 +10,10 @@ jobs: # jobs. We will have two jobs (test and publish) with multiple steps.
     # Our test job will run on ubuntu.
     # We define matrix strategy for python-version so that 
     # our tests are run on multiple python versions:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     strategy: 
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.8]
 
     steps:
       - uses: actions/checkout@v2
@@ -28,13 +28,13 @@ jobs: # jobs. We will have two jobs (test and publish) with multiple steps.
         run: poetry install
       - name: Pylint # Run pylint static analysis
         run: |
-          poetry run pylint tsgen
+          poetry run pylint pyettj
       - name: mypy  # Run mypy static analysis
         run: |
-          poetry run mypy -p tsgen
+          poetry run mypy -p pyettj
       - name: Pytest # Run pytest
         run: |
-          poetry run coverage run -m --source=tsgen pytest tests
+          poetry run coverage run -m --source=pyettj pytest ./pyettj/tests
           poetry run coverage report
       - name: Coveralls # Send coverage metrics to coveralls.io
         run: poetry run coveralls
@@ -46,7 +46,7 @@ jobs: # jobs. We will have two jobs (test and publish) with multiple steps.
     # and only if the test job has passed
     if: github.event_name == 'release' && github.event.action == 'created'
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
