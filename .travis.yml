@@ -2,8 +2,7 @@ python:
 - 3.8
 os: osx
 before_install:
-- brew install pyenv
-- pyenv install 3.8.5
+- brew update && brew upgrade pyenv
 - pip install poetry
 install:
 - poetry install
