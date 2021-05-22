@@ -1,9 +1,5 @@
 python:
 - 3.8
-env:
-  global:
-  - secure: "<encrypted MYPYPI_USER=rafael.rafarod>"
-  - secure: "<encrypted MYPYPI_PASS=1537Rafa>"
 before_install:
 - pip install poetry
 install:
@@ -11,9 +7,6 @@ install:
 script:
 - poetry run coverage run -m --source=pyettj pytest ./pyettj/tests
 before_deploy:
-#export POETRY_HTTP_BASIC_PYPI_PASSWORD=1537Rafa
-#export POETRY_HTTP_BASIC_PYPI_USERNAME=rafael.rafarod
-#export POETRY_PYPI_TOKEN_PYPI=pypi-AgEIcHlwaS5vcmcCJGQ2NWQ4YWJkLTk4N2UtNDQ1Yi05ZmYyLTQ1ZWQ3NDI4NmY4MwACJXsicGVybWlzc2lvbnMiOiAidXNlciIsICJ2ZXJzaW9uIjogMX0AAAYgsW8NqLWwv2iYD2iESkZa623APvcBf_on143uw90870g
 - poetry build -f sdist
 deploy:
   provider: script
