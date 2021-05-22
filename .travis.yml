@@ -1,10 +1,8 @@
 python:
-- 3.8
-addons:
-  apt:
-    packages:
-      - "python3"
+- 3.8.5
+os: osx
 before_install:
+- brew install python3
 - pip3 install poetry
 install:
 - poetry install
