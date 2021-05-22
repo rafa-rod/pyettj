@@ -1,9 +1,9 @@
 python:
 - 3.8
-os: osx
+os: linux
 before_install:
-- brew update && brew upgrade pyenv
-- pip install poetry
+- sudo apt-get install python3-pip
+- pip3 install poetry
 install:
 - poetry install
 script:
