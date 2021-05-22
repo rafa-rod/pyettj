@@ -3,7 +3,7 @@ python:
 os: osx
 before_install:
 - brew install python3
-- pip3 install poetry
+- pip install poetry
 install:
 - poetry install
 script:
