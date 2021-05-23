@@ -13,7 +13,7 @@
 
 <!-- content -->
 
-**pyettj** é uma biblioteca Python para capturar dados públicos das curvas de juros, curva a termo ou estrutura a termo da taxa de juros (ETTJ) da B3 (Brasil, Bolsa e Balcão).
+**pyettj** eh uma biblioteca Python para capturar dados publicos das curvas de juros, curva a termo ou estrutura a termo da taxa de juros (ETTJ) da B3 (Brasil, Bolsa e Balcao).
 
 Para caputar os dados, basta informar a data:
 
@@ -23,12 +23,12 @@ data = '18/05/2021'
 ettj_dataframe = ettj.get_ettj(data)
 ```
 
-Todas as curvas disponíveis são disponibilizadas, para selecionar a desejada basta filtrar o `panda.DataFrame` resultante.
+Todas as curvas disponiveis são disponibilizadas, para selecionar a desejada basta filtrar o `panda.DataFrame` resultante.
 
-E para plotar o gráfico da curva, invoque a função de plotagem da biblioteca:
+E para plotar o grafico da curva, invoque a funcao de plotagem da biblioteca:
 
 ```python
-curva = "DI x pré"
+curva = "DI x pre"
 ettj.plot_ettj(ettj_dataframe, curva, data)
 ```
 
