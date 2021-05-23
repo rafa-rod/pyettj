@@ -6,7 +6,8 @@ os: linux
 before_install:
 - sudo apt-get install python3-pip
 - pip3 install --upgrade pip
-- sudo apt-get upgrade python3.8
+- sudo apt-get update
+- sudo apt-get install python3.8
 - sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1
 - sudo update-alternatives --config python3
 - pip3 install poetry
