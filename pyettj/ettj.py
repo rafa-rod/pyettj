@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri May 21 09:30:26 2021
-
-@author: RRAFA
-"""
 from bs4 import BeautifulSoup # type: ignore
 import requests, time
 import pandas as pd # type: ignore
