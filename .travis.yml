@@ -8,7 +8,7 @@ before_install:
 - pip3 install --upgrade pip
 - sudo apt install python3
 - pip3 install poetry
-- pip3 install -U virtualenv
+- sudo apt remove --purge python3-virtualenv virtualenv
 install:
 - poetry install
 script:
