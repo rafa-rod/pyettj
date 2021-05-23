@@ -12,7 +12,6 @@ requests = "^2.25.1"
 beautifulsoup4 = "^4.9.3"
 matplotlib = "^3.4.2"
 lxml = "^4.6.3"
-virtualenv = "^20.4.6"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
