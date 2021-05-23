@@ -1,5 +1,5 @@
 language: ruby
-dist: xenial
+dist: focal
 python:
 - 3.8
 os: linux
