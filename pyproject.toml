@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyettj"
-version = "0.1.1"
+version = "0.1.2"
 description = "Coletar dados de curvas de juros (ettj)."
 authors = ["Rafael Rodrigues <rafael.rafarod@gmail.com>"]
 license = "MIT"
@@ -18,6 +18,7 @@ pytest = "^6.2.4"
 coverage = "^5.5"
 mypy = "^0.812"
 pre-commit = "^2.13.0"
+codecov = "^2.1.11"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
