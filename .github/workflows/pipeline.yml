@@ -39,3 +39,5 @@ jobs: # jobs. We will have two jobs (test and publish) with multiple steps.
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: .coverage
+          flag-name: run-python_${{ matrix.python }}-${{ matrix.connector }}
