@@ -35,3 +35,7 @@ jobs: # jobs. We will have two jobs (test and publish) with multiple steps.
           pip install matplotlib
           pip install lxml
           pytest -vv --cov-report=xml --cov=pyettj ./pyettj/tests
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
