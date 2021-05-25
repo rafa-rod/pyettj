@@ -35,11 +35,3 @@ jobs: # jobs. We will have two jobs (test and publish) with multiple steps.
           pip install matplotlib
           pip install lxml
           pytest -vv --cov-report=xml --cov=pyettj ./pyettj/tests
-      - name: Build and publish # publish tsgen to PyPI
-        env:
-          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: |
-          export PYTHONIOENCODING=utf8
-          python setup.py sdist bdist_wheel
-          twine upload dist/*
