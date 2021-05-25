@@ -40,5 +40,6 @@ jobs: # jobs. We will have two jobs (test and publish) with multiple steps.
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: |
+          export PYTHONIOENCODING=utf8
           python setup.py sdist bdist_wheel
           twine upload dist/*
