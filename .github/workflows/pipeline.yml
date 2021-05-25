@@ -30,6 +30,7 @@ jobs: # jobs. We will have two jobs (test and publish) with multiple steps.
         run: |
           pip install pytest
           pip install pytest-cov
+          pip install beautifulsoup4
           pytest -vv --cov-report=xml --cov=pyettj ./pyettj/tests
       - name: Build and publish # publish tsgen to PyPI
         env:
