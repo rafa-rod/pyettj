@@ -37,4 +37,4 @@ jobs: # jobs. We will have two jobs (test and publish) with multiple steps.
           pytest -vv --cov-report=xml --cov=pyettj ./pyettj/tests
       - name: Run Codecov
 	      uses: actions/codecov-action@v0.1.2
-	      secrets: ${{CODECOV_TOKEN}}
+	      secrets: ["CODECOV_TOKEN"]
