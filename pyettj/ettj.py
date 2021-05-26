@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from bs4 import BeautifulSoup # type: ignore
 import requests, time
 import pandas as pd # type: ignore
@@ -48,6 +49,7 @@ def get_ettj(data):
 
     final_table_pandas = pd.concat([pandas_table1, pandas_table2, pandas_table3, pandas_table4], axis=1)
     final_table_pandas["Data"] = data
+    final_table_pandas = final_table_pandas.loc[:,~final_table_pandas.columns.duplicated()]
     print("Curvas capturadas em {} segundos.".format(round(time.time()-start,2)))
     return final_table_pandas
 
@@ -55,7 +57,7 @@ def plot_ettj(ettj, curva, data): #pragma: no cover
     ettj_ = ettj.copy()
     data = pd.to_datetime(data).strftime("%d/%m/%Y")
     ettj_ = ettj_[ettj_.Data==data]
-    ettj_.index = ettj_[ettj.columns[0]]
+    ettj_.index = ettj_[ettj_.columns[0]]
     ettj_ = ettj_[[curva]]
     ettj_.plot()
     plt.title('Curva - '+curva)

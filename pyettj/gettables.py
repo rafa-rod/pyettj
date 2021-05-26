@@ -1,25 +1,10 @@
-from bs4 import BeautifulSoup # type: ignore
-import requests
+# -*- coding: utf-8 -*-
 import pandas as pd # type: ignore
 
 pd.set_option('display.float_format', lambda x: '%.5f' % x)
 pd.set_option('display.max_rows',100)
 pd.set_option('display.max_columns',10)
 pd.set_option('display.width',1000)
-
-data = "2021/05/18"
-data = pd.to_datetime(data).strftime("%d/%m/%Y")
-curva = "TODOS"
-url = "http://www2.bmf.com.br/pages/portal/bmfbovespa/boletim1/TxRef1.asp?Data={}&Data1=20060201&slcTaxa={}".format(data,curva)
-
-page = requests.get(url)
-pagetext = page.text
-
-soup = BeautifulSoup(pagetext, 'lxml')
-table1 = soup.find_all('table')[1]
-table2 = soup.find_all('table')[2]
-table3 = soup.find_all('table')[3]
-table4 = soup.find_all('table')[4]
 
 def get_fourth_table(main_table):
     count=0

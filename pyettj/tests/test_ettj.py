@@ -1,8 +1,5 @@
+# -*- coding: utf-8 -*-
 import pytest
-#import sys
-
-#path = "../pyettj/"
-#sys.path.append(path)
 
 from pyettj import get_ettj, plot_ettj
 data = "2021/05/18"
