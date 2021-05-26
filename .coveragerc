@@ -4,10 +4,12 @@ source = pyettj
 
 [report]
 exclude_lines =
-    if self.debug:
     pragma: no cover
+    def __repr__
+    if .debug:
     raise NotImplementedError
     if __name__ == .__main__.:
 ignore_errors = True
 omit =
     tests/*
+    setup.py
