@@ -1,20 +1,17 @@
 #!/usr/bin/python
 # _*_ coding:utf-8 _*_
 from setuptools import setup
+import os
 
-import subprocess
-from os import path
+this_directory = os.path.abspath(os.path.dirname(__file__))
 
-this_directory = path.abspath(path.dirname(__file__))
-
-with open(path.join(this_directory, 'README.md'), encoding="utf-8") as f:
+with open(os.path.join(this_directory, 'README.md'), encoding="utf-8") as f:
     long_description = f.read()
 
-out = subprocess.Popen(['python', path.join(this_directory,'version.py')], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-stdout, _ = out.communicate()
-version = stdout.decode("utf-8").strip().split(" ")[-1]
-print(version)
-#version = "0.1.2"
+with open(os.path.join(this_directory,'pyettj','version.py'), encoding="utf-8") as f:
+    version = f.read()
+
+version = version.split("=")[-1].split("print")[0].replace('"','').strip()
 
 packages = ['pyettj']
 

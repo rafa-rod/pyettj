@@ -28,7 +28,7 @@ data = '18/05/2021'
 ettj_dataframe = ettj.get_ettj(data)
 ```
 
-Todas as curvas disponíveis são disponibilizadas, para selecionar a desejada basta filtrar o panda.DataFrame resultante.
+Todas as curvas disponíveis são disponibilizadas, para selecionar a desejada basta filtrar o `pandas.DataFrame` resultante.
 
 E para plotar o gráfico da curva, invoque a função de plotagem da biblioteca:
 
