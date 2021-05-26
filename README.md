@@ -11,7 +11,7 @@
         <img src="https://github.com/rafa-rod/pyettj/actions/workflows/pipeline.yml/badge.svg"
             alt="CI/CD"></a> &nbsp;
       <a href="https://codecov.io/gh/rafa-rod/pyettj">
-        <img src="https://codecov.io/gh/rafa-rod/pyettj/branch/master/graph/badge.svg?token=TRU9VIoqZB"/>
+        <img src="https://codecov.io/gh/rafa-rod/pyettj/branch/main/graph/badge.svg?token=TRU9VIoqZB"/>
       </a>
     
 </p>
