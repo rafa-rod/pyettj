@@ -36,6 +36,7 @@ jobs: # jobs. We will have two jobs (test and publish) with multiple steps.
           pip install lxml
           pytest -vv --cov-report=xml --cov=pyettj ./pyettj/tests
       - name: Run Codecov
-        uses: codecov/codecov-action@v1
-      	  with:
-      	    token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+	      action "send coverage to codecov" {
+	      uses = "Atrox/codecov-action@v0.1.2"
+	      secrets = ["CODECOV_TOKEN"]
+	      }
