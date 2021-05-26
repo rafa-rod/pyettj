@@ -38,5 +38,5 @@ ettj.plot_ettj(ettj_dataframe, curva, data)
 ```
 
 <center>
-<img src="https://github.com/rafa-rod/pyettj/tree/main/pyettj/media/pre.png" style="width:60%;"/>
+<img src="https://github.com/rafa-rod/pyettj/blob/main/media/pre.png" style="width:60%;"/>
 </center>
