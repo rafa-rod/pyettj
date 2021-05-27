@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
-import pytest
+import pytest, sys
 
-from pyettj import get_ettj, plot_ettj
+sys.path.append("./pyettj/")
+sys.path.append("./pyettj/pyettj/")
+
+from ettj import get_ettj, plot_ettj, listar_dias_uteis
 data = "2021/05/18"
 
 class TestClass():
@@ -11,6 +14,21 @@ class TestClass():
         self.curvas = self.ettj_dataframe.columns.tolist()[1:]
         self.curva = self.curvas[2] #selic
         return self.ettj_dataframe, self.curva
+
+    def test_listar_dias_uteis(self):
+        de = "2021/05/13"
+        ate = data
+        datas=listar_dias_uteis(de, ate)
+        with pytest.raises(Exception) as error4:
+            de = 12
+            ate = "2021/05/13"
+            datas=listar_dias_uteis(de, ate)
+        assert str(error4.value) == "O parametro data deve ser em formato string, exemplo: '18/05/2021'"
+        with pytest.raises(Exception) as error5:
+            de = "13/05/2021"
+            ate = 34
+            datas=listar_dias_uteis(de, ate)
+        assert str(error5.value) == "O parametro data deve ser em formato string, exemplo: '18/05/2021'"
 
     def test_plot_ettj(self):
         self.ettj_dataframe, self.curva = self.test_ettj()

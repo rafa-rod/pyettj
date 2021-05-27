@@ -10,9 +10,12 @@
     <a href="https://github.com/rafa-rod/pyettj/actions/workflows/pipeline.yml">
         <img src="https://github.com/rafa-rod/pyettj/actions/workflows/pipeline.yml/badge.svg"
             alt="CI/CD"></a> &nbsp;
-      <a href="https://codecov.io/gh/rafa-rod/pyettj">
+    <a href="https://codecov.io/gh/rafa-rod/pyettj">
         <img src="https://codecov.io/gh/rafa-rod/pyettj/branch/main/graph/badge.svg?token=TRU9VIoqZB"/>
-      </a>
+    </a>
+    <a href="https://badge.fury.io/py/pyettj">
+        <img src="https://badge.fury.io/py/pyettj.svg" alt="PyPI version" height="18">
+    </a>
     
 </p>
 
@@ -33,10 +36,31 @@ Todas as curvas disponíveis são disponibilizadas, para selecionar a desejada b
 E para plotar o gráfico da curva, invoque a função de plotagem da biblioteca:
 
 ```python
-curva = "DI x pré"
+curva = "DI x pré 252"
 ettj.plot_ettj(ettj_dataframe, curva, data)
 ```
 
 <center>
 <img src="https://github.com/rafa-rod/pyettj/blob/main/media/pre.png" style="width:60%;"/>
 </center>
+
+Para coletar várias datas, chame a função `listar_dias_uteis` informando as datas iniciais e finais. Assim, ela retornará somente os dias úteis neste intervalo.
+
+```python
+import pandas as pd
+
+de = '13/05/2021'
+ate ='18/05/2021'
+datas = ettj.listar_dias_uteis(de, ate)
+
+todas_datas = pd.DataFrame()
+for dat in datas:
+    dados=ettj.get_ettj(dat)
+    todas_datas=pd.concat([dados, todas_datas])
+```
+
+A variável `todas_datas` possuirá todas as curvas em cada data do intervalo. Para identificar as datas, basta o comando:
+
+```python
+todas_datas.Data.unique().tolist()
+```

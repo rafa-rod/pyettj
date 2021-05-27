@@ -6,7 +6,7 @@ pd.set_option('display.max_rows',100)
 pd.set_option('display.max_columns',10)
 pd.set_option('display.width',1000)
 
-def get_fourth_table(main_table):
+def get_fourth_table(main_table): #pragma: no cover
     count=0
     dias_corridos, iene, spread_libor_eur_usd, libor = [], [], [], []
     table_names, sub_table_names = [], []
@@ -35,7 +35,7 @@ def get_fourth_table(main_table):
             final_table[col] = pd.to_numeric(final_table[col].str.replace(",","."))
     return final_table
 
-def get_third_table(main_table):
+def get_third_table(main_table): #pragma: no cover
     count=0
     dias_corridos, usd, ibrx50 = [], [], []
     ibov, taxa_di_igpm, taxa_di_ipca = [], [], []
@@ -82,7 +82,7 @@ def get_third_table(main_table):
             final_table[col] = pd.to_numeric(final_table[col].str.replace(",","."))
     return final_table
 
-def get_second_table(main_table):
+def get_second_table(main_table): #pragma: no cover
     count=0
     dias_corridos, taxa_di_eur, taxa_252_tbf_pre = [], [], []
     taxa_360_tbf_pre, taxa_252_tr_pre, taxa_360_tr_pre = [], [], []
@@ -134,7 +134,7 @@ def get_second_table(main_table):
             final_table[col] = pd.to_numeric(final_table[col].str.replace(",","."))
     return final_table
 
-def get_first_table(main_table):
+def get_first_table(main_table): #pragma: no cover
     count=0
     dias_corridos, taxa_252_pre_di, taxa_360_pre_di = [], [], []
     taxa_selic_pre, taxa_252_di_tr, taxa_360_di_tr = [], [], []
