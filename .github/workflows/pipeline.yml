@@ -26,15 +26,6 @@ jobs: # jobs. We will have two jobs (test and publish) with multiple steps.
         run:
             export PYTHONIOENCODING=utf8 
             poetry install
-      - name: Pytest # Run pytest
-        run: |
-          pip install pytest
-          pip install pytest-cov
-          pip install beautifulsoup4
-          pip install pandas
-          pip install matplotlib
-          pip install lxml
-          pytest -vv --cov-report=xml --cov=pyettj ./pyettj/tests
       - uses: codecov/codecov-action@v1.2.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
