@@ -66,16 +66,16 @@ def get_ettj(data):
     soup = BeautifulSoup(pagetext, 'lxml')
     table1 = soup.find_all('table')[1]
     if 'Não há dados para a data fornecida' in table1.text.strip():
-        raise ValueError("Não há dados para a data fornecida. Dados a partir de 05/01/2004.")
+        raise ValueError("Não há dados para a data fornecida. Dados a partir de 02/01/2004.")
     else:
         table2 = soup.find_all('table')[2]
         table3 = soup.find_all('table')[3]
         table4 = soup.find_all('table')[4]
 
-        pandas_table1 = gettables.get_first_table(table1)
-        pandas_table2 = gettables.get_second_table(table2)
-        pandas_table3 = gettables.get_third_table(table3)
-        pandas_table4 = gettables.get_fourth_table(table4)
+        pandas_table1 = gettables.get_table(table1)
+        pandas_table2 = gettables.get_table(table2)
+        pandas_table3 = gettables.get_table(table3)
+        pandas_table4 = gettables.get_table(table4)
 
         final_table_pandas = pd.concat([pandas_table1, pandas_table2, pandas_table3, pandas_table4], axis=1)
         final_table_pandas["Data"] = data
