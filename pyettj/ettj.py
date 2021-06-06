@@ -31,8 +31,8 @@ def listar_dias_uteis(de, ate):
             dias_uteis (lista): lista contendo dias úteis no intervalo apontado.
     '''
     path_feriados = os.path.realpath(__file__).split('.py')[0][:-4]
-    _treat_parameters(de)
-    _treat_parameters(ate)
+    de=_treat_parameters(de)
+    ate=_treat_parameters(ate)
     holidays = bizdays.load_holidays(os.path.join(path_feriados,"Feriados.csv"))
     cal = bizdays.Calendar(holidays, ['Sunday', 'Saturday'], name='Brazil')
     dataIni = pd.to_datetime(de).strftime("%Y-%m-%d")
