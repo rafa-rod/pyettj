@@ -4,16 +4,12 @@ import requests, time
 import pandas as pd # type: ignore
 import matplotlib.pyplot as plt; plt.style.use('fivethirtyeight') # type: ignore
 from pyettj import gettables
-import bizdays
+import bizdays, os
 
 pd.set_option('display.float_format', lambda x: '%.5f' % x)
 pd.set_option('display.max_rows',100)
 pd.set_option('display.max_columns',10)
 pd.set_option('display.width',1000)
-
-import sys
-sys.path.append("./pyettj/")
-sys.path.append("./pyettj/pyettj/")
 
 def _treat_parameters(data):
     '''Checking all parameters and access to web data'''
@@ -34,11 +30,10 @@ def listar_dias_uteis(de, ate):
         Retorno:
             dias_uteis (lista): lista contendo dias úteis no intervalo apontado.
     '''
-    import os
-    print(os.getcwd())
+    path_feriados = os.path.realpath(__file__).split('.py')[0][:-4]
     _treat_parameters(de)
     _treat_parameters(ate)
-    holidays = bizdays.load_holidays("Feriados.csv")
+    holidays = bizdays.load_holidays(os.path.join(path_feriados,"Feriados.csv"))
     cal = bizdays.Calendar(holidays, ['Sunday', 'Saturday'], name='Brazil')
     dataIni = pd.to_datetime(de).strftime("%Y-%m-%d")
     dataFim = pd.to_datetime(ate).strftime("%Y-%m-%d")
@@ -70,6 +65,8 @@ def get_ettj(data):
 
     soup = BeautifulSoup(pagetext, 'lxml')
     table1 = soup.find_all('table')[1]
+    if 'Não há dados para a data fornecida' in table1.text.strip():
+        raise ValueError("Não há dados para a data fornecida. Dados a partir de 05/01/2004.")
     table2 = soup.find_all('table')[2]
     table3 = soup.find_all('table')[3]
     table4 = soup.find_all('table')[4]
