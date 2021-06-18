@@ -23,6 +23,16 @@
 
 **pyettj** é uma biblioteca Python para capturar dados públicos das curvas de juros, curva a termo ou estrutura a termo da taxa de juros (ETTJ) da B3 (Brasil, Bolsa e Balcão).
 
+## Instalação
+
+Basta acionar o comando abaixo:
+
+```sh
+pip install pyettj
+```
+
+## Exemplo de Uso
+
 Para caputar os dados, basta informar a data:
 
 ```python
