@@ -33,7 +33,7 @@ def get_table(main_table): #pragma: no cover
                 dados2 = []
       
     table_names_part1 = [table_names[i+1] if table_names[i]=='' else table_names[i] for i in range(len(table_names)-1)]
-    table_names_part2 = table_names_part1 + [table_names_part1[-1]]
+    table_names_part2 = table_names_part1 + [table_names[-1]]
     
     new_column_names = table_names_part2
     new_sub_table_names = [x+str(i) if sub_table_names.count(x)==2 else x for i,x in enumerate(sub_table_names)]
