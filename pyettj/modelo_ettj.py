@@ -5,6 +5,9 @@ import io
 import numpy as np
 from typing import Dict, Union
 
+import warnings
+warnings.filterwarnings("ignore")
+
 def get_ettj_anbima(data: str, proxies: Union[Dict[str, str], None] = None) -> Union[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Captura dados ETTJ (PRE e IPCA) da ANBIMA.
         Parâmetros:

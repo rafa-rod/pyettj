@@ -5,7 +5,10 @@ import pandas as pd # type: ignore
 import matplotlib.pyplot as plt; plt.style.use('fivethirtyeight') # type: ignore
 from pyettj import gettables
 import bizdays, os
-from typing import List, Union, Dict
+from typing import Any, List, Union, Dict
+
+import warnings
+warnings.filterwarnings("ignore")
 
 pd.set_option('display.float_format', lambda x: '%.5f' % x)
 pd.set_option('display.max_rows',100)
@@ -61,7 +64,7 @@ def get_ettj(data: str, curva: str = "TODOS", proxies: Union[Dict[str, str], Non
     if curva == "TODOS":
         url = "http://www2.bmf.com.br/pages/portal/bmfbovespa/boletim1/TxRef1.asp?Data={}&Data1=20060201&slcTaxa={}".format(data,curva)
     else:
-        url = f"https://www2.bmf.com.br/pages/portal/bmfbovespa/lumis/lum-taxas-referenciais-bmf-ptBR.asp?Data={data}2&Data1=20220913&slcTaxa={curva}"
+        url = f"http://www2.bmf.com.br/pages/portal/bmfbovespa/lumis/lum-taxas-referenciais-bmf-ptBR.asp?Data={data}&Data1=20060201&slcTaxa={curva}"
     
     try:
         if proxies:
@@ -95,11 +98,15 @@ def get_ettj(data: str, curva: str = "TODOS", proxies: Union[Dict[str, str], Non
             print("Curvas capturadas em {} segundos.".format(round(time.time()-start,2)))
             return final_table_pandas
     else:
-        final_table_pandas = pd.read_html(page, flavor="bs4")[0]
+        final_table_pandas = pd.read_html(pagetext, flavor="bs4")[0]
+        final_table_pandas.columns = final_table_pandas.columns.to_flat_index()
+        final_table_pandas.columns = [final_table_pandas.columns[x][0] if x==0 else final_table_pandas.columns[x][0]+" "+final_table_pandas.columns[x][1] for x in range(len(final_table_pandas.columns))]
+        for cols in final_table_pandas.columns[1:]:
+            final_table_pandas[cols] = final_table_pandas[cols]/100
         print("Curva capturada em {} segundos.".format(round(time.time()-start,2)))
         return final_table_pandas
 
-def plot_ettj(ettj, curva, data):
+def plot_ettj(ettj: pd.DataFrame, curva: str, data: str, **opcionais: Any) -> None:
     '''Plota curva desejada.
         Parâmetros:
             ettj  (dataframe) => dados obtidos pela função get_ettj em data específica.
@@ -113,7 +120,9 @@ def plot_ettj(ettj, curva, data):
     ettj_ = ettj_[ettj_.Data==data]
     ettj_.index = ettj_[ettj_.columns[0]]
     ettj_ = ettj_[[curva]]
-    ettj_.plot()
+
+    plt.figure(figsize=(opcionais.get("figsize")))
+    ettj_.plot(opcionais.get("lw"), opcionais.get("color"))
     plt.title('Curva - '+curva)
     plt.xticks(rotation=45)
     plt.xlabel('Maturidade (dias)')

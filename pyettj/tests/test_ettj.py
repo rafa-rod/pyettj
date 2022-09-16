@@ -5,6 +5,8 @@ sys.path.append("./pyettj/")
 sys.path.append("./pyettj/pyettj/")
 
 from ettj import get_ettj, plot_ettj, listar_dias_uteis
+from modelo_ettj import get_ettj_anbima, svensson
+
 data = "2021/05/18"
 
 class TestClass():
@@ -40,6 +42,10 @@ class TestClass():
         assert str(error1.value) == "O parametro data deve ser em formato string, exemplo: '18/05/2021'"
         with pytest.raises(Exception) as error2:
             get_ettj("teste")
-        assert str(error2.value) == "O parametro data deve ser em formato string, exemplo: '18/05/2021'"  
+        assert str(error2.value) == "O parametro data deve ser em formato string, exemplo: '18/05/2021'" 
+
+    def test_svensson(self):
+        taxa = svensson(0.13, 0.03, 0.03, 0.03, 1.97, 0.93, 1/252)
+        assert round(taxa,2) == 0.16
 
 TestClass()
