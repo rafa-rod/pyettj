@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyettj"
-version = "0.2.1"
+version = "0.2.3"
 description = "Coletar dados de curvas de juros (ettj)."
 authors = ["Rafael Rodrigues <rafael.rafarod@gmail.com>"]
 license = "MIT"
