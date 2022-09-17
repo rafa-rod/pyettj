@@ -1,12 +1,19 @@
-import xml.etree.ElementTree as ET
-import requests
-import pandas as pd
-import io
-import numpy as np
-from typing import Dict, Union
+# -*- coding: utf-8 -*-
+from bs4 import BeautifulSoup # type: ignore
+import requests, time
+import pandas as pd # type: ignore
+import matplotlib.pyplot as plt; plt.style.use('fivethirtyeight') # type: ignore
+from pyettj import gettables
+import bizdays, os
+from typing import Any, List, Union, Dict
 
 import warnings
 warnings.filterwarnings("ignore")
+
+pd.set_option('display.float_format', lambda x: '%.5f' % x)
+pd.set_option('display.max_rows',100)
+pd.set_option('display.max_columns',10)
+pd.set_option('display.width',1000)
 
 def _treat_parameters(data):
     '''Checking all parameters and access to web data'''
@@ -19,80 +26,107 @@ def _treat_parameters(data):
         except:
             raise ValueError("O parametro data deve ser em formato string, exemplo: '18/05/2021'")
 
-
-def get_ettj_anbima(data: str, proxies: Union[Dict[str, str], None] = None) -> Union[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Captura dados ETTJ (PRE e IPCA) da ANBIMA.
+def listar_dias_uteis(de: str, ate: str) -> List[str]:
+    '''Baseado em uma lista de calendários, a função filtra somente datas úteis do calendário brasileiro
         Parâmetros:
-            data  (string) => data formato "%d/%m/%Y"
+            de  (string) => data formato "%Y-%m-%d" ou "%d/%m/%Y"
+            ate (string) => data formato "%Y-%m-%d" ou "%d/%m/%Y"
+        Retorno:
+            dias_uteis (lista): lista contendo dias úteis no intervalo apontado.
+    '''
+    path_feriados = os.path.realpath(__file__).split('.py')[0][:-4]
+    de=_treat_parameters(de)
+    ate=_treat_parameters(ate)
+    holidays = bizdays.load_holidays(os.path.join(path_feriados,"Feriados.csv"))
+    cal = bizdays.Calendar(holidays, ['Sunday', 'Saturday'], name='Brazil')
+    dataIni = pd.to_datetime(de).strftime("%Y-%m-%d")
+    dataFim = pd.to_datetime(ate).strftime("%Y-%m-%d")
+    dias_uteis = list(cal.seq(dataIni, dataFim))
+    dias_uteis = [str(x).split(' ')[0] for x in dias_uteis]
+    dias_uteis.sort()
+    return dias_uteis
+
+def get_ettj(data: str, curva: str = "TODOS", proxies: Union[Dict[str, str], None] = None) -> pd.DataFrame:
+    '''Captura todas as curvas disponíveis pela B3 em data específica.
+        Parâmetros:
+            data  (string) => data formato "%Y-%m-%d" ou "%d/%m/%Y";
+            curva (string) => opcional. caso selecionar curva específica, exemplo: PRE;
             proxies (dict) => opcional. se necessário, informar dicionário com as proxies, exemplo: {"http":f'https://{LOGIN}:{SENHA}@{PROXY_EMPRESA}:{PORTA}'}
         Retorno:
-            parametros_curva (dataframe): parâmetros para montagem da curva svensson.
-            ettj (dataframe): vértices e taxas por tipo de curva.
-            taxa (dataframe): ettj da taxa prefixada.
-            erro (dataframe): erro de estimação por tipo de Título Público.
-    """
+            final_table_pandas (dataframe): dataframe contendo todas as curvas, maturidade e data solicitada.
+    '''
+    start = time.time()
+
     data = _treat_parameters(data)
 
-    url = "https://www.anbima.com.br/informacoes/est-termo/CZ-down.asp"
-    payload = {"Idioma": "PT", "Dt_Ref": data, "saida": "xml"}
-    headers = {"Content-type": "application/x-www-form-urlencoded", 
-               "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"}
-    if proxies:
-        resposta = requests.post(url, proxies=proxies, verify=False,
-                                              data=payload,
-                                              headers=headers)
-        if resposta.status_code==200 and len(resposta.text)>30: 
-            ettj_anbima = resposta.text
-        elif "CURVAZERO" in resposta.text or resposta.status_code!=200:
-            raise ValueError("Dado não disponível.")
+    #data = pd.to_datetime(data).strftime("%d/%m/%Y")
+    curva = curva.upper()
+    if curva == "TODOS":
+        url = "http://www2.bmf.com.br/pages/portal/bmfbovespa/boletim1/TxRef1.asp?Data={}&Data1=20060201&slcTaxa={}".format(data,curva)
     else:
-        resposta = requests.post(url,
-                                    data=payload,
-                                   headers=headers)
-        if resposta.status_code==200 and len(resposta.text)>30: 
-            ettj_anbima = resposta.text
-        elif "CURVAZERO" in resposta.text or resposta.status_code!=200:
-            raise ValueError("Dado não disponível.")
-        
-    ettj_anbima_str = io.StringIO(ettj_anbima)
-
-    tree1 = ET.parse(ettj_anbima_str)
+        url = f"http://www2.bmf.com.br/pages/portal/bmfbovespa/lumis/lum-taxas-referenciais-bmf-ptBR.asp?Data={data}&Data1=20060201&slcTaxa={curva}"
     
-    parametros_curva = pd.DataFrame()
-    ettj = pd.DataFrame()
-    taxa = pd.DataFrame()
-    erros = pd.DataFrame()
-    for x in tree1.iter():
-        dado = x.attrib
-        if x.tag == 'PARAMETRO': #parametros da curva
-            curva = pd.DataFrame.from_dict(dado, orient="index").T
-            parametros_curva = pd.concat([parametros_curva, curva])
-        if x.tag == 'VERTICES': #ETTJ
-            curva = pd.DataFrame.from_dict(dado, orient="index").T
-            ettj = pd.concat([ettj, curva])
-        if x.tag == 'CIRCULAR': #taxa por vertice
-            curva = pd.DataFrame.from_dict(dado, orient="index").T
-            taxa = pd.concat([taxa, curva])
-        if x.tag == 'ERRO': #taxa por vertice
-            curva = pd.DataFrame.from_dict(dado, orient="index").T
-            erros = pd.concat([erros, curva])
-    ettj = ettj.rename(columns={"Inflacao":"Inflação Implícita"})
-    taxa = taxa.rename(columns={"Taxa":"Taxa Prefixada"})
-    return parametros_curva.set_index("Grupo"), ettj, taxa, erros
+    try:
+        if proxies:
+            page = requests.get(url, proxies=proxies, verify=False)
+            pagetext = page.text
+        else:
+            page = requests.get(url)
+            pagetext = page.text
+    except:
+        raise Exception("Não foi possível conectar ao website. Tente novamente mais tarde.")
 
+    if curva == "TODOS":
+        soup = BeautifulSoup(pagetext, 'lxml')
+        table1 = soup.find_all('table')[1]
+        if 'Não há dados para a data fornecida' in table1.text.strip():
+            raise ValueError("Não há dados para a data fornecida. Dados a partir de 02/01/2004.")
+        else:
+            table2 = soup.find_all('table')[2]
+            table3 = soup.find_all('table')[3]
+            table4 = soup.find_all('table')[4]
 
-def svensson(beta1: float, beta2: float, beta3: float, beta4: float, lambda1: float, lambda2: float, t: float) -> float:
-    """Captura dados ETTJ (PRE e IPCA) da ANBIMA segundo equação Svensson (1994). 
-        Para equação de Nelson Siegel (1987), basta informar beta4 e lambda2 iguais a zero.
+            pandas_table1 = gettables.get_table(table1)
+            pandas_table2 = gettables.get_table(table2)
+            pandas_table3 = gettables.get_table(table3)
+            pandas_table4 = gettables.get_table(table4)
+
+            final_table_pandas = pd.concat([pandas_table1, pandas_table2, pandas_table3, pandas_table4], axis=1)
+            final_table_pandas["Data"] = data
+            final_table_pandas = final_table_pandas.loc[:,~final_table_pandas.columns.duplicated()]
+            final_table_pandas.columns = final_table_pandas.columns.str.split('(').str.get(0).str.strip()
+            print("Curvas capturadas em {} segundos.".format(round(time.time()-start,2)))
+            return final_table_pandas
+    else:
+        final_table_pandas = pd.read_html(pagetext, flavor="bs4")[0]
+        final_table_pandas.columns = final_table_pandas.columns.to_flat_index()
+        final_table_pandas.columns = [final_table_pandas.columns[x][0] if x==0 else final_table_pandas.columns[x][0]+" "+final_table_pandas.columns[x][1] for x in range(len(final_table_pandas.columns))]
+        for cols in final_table_pandas.columns[1:]:
+            final_table_pandas[cols] = final_table_pandas[cols]/100
+        print("Curva capturada em {} segundos.".format(round(time.time()-start,2)))
+        return final_table_pandas
+
+def plot_ettj(ettj: pd.DataFrame, curva: str, data: str, **opcionais: Any) -> None:
+    '''Plota curva desejada.
         Parâmetros:
-            beta1, beta2, beta3, beta4, lambda1 e lambda2 (float) => parâmetros que definem nivel e curvatura;
-            t (float) => maturidade/vértice em anos.
+            ettj  (dataframe) => dados obtidos pela função get_ettj em data específica.
+            curva (string)    => nome da curva.
+            data  (string)    => data da curva
         Retorno:
-            taxa (float): taxa de juros da curva.
-    """    
-    def exponencial(lambdas, t):
-        return np.exp(1)**(-lambdas*t)
-    
-    return beta1 + beta2* ((1-exponencial(lambda1, t))/(lambda1*t)) + \
-                    beta3* ((1-exponencial(lambda1, t))/(lambda1*t) - exponencial(lambda1, t)) + \
-                       beta4* ((1-exponencial(lambda2, t))/(lambda2*t) - exponencial(lambda2, t))
+            gráfico ettj (taxa x maturidade)
+    '''
+    ettj_ = ettj.copy()
+    data = pd.to_datetime(data).strftime("%d/%m/%Y")
+    ettj_ = ettj_[ettj_.Data==data]
+    ettj_.index = ettj_[ettj_.columns[0]]
+    ettj_ = ettj_[[curva]]
+
+    plt.figure(figsize=(opcionais.get("figsize")))
+    ettj_.plot(opcionais.get("lw"), opcionais.get("color"))
+    plt.title('Curva - '+curva)
+    plt.xticks(rotation=45)
+    plt.xlabel('Maturidade (dias)')
+    plt.ylabel('Taxa (%)  ',rotation=0, labelpad=50)
+    plt.tight_layout()
+    plt.legend('')
+    plt.show()
