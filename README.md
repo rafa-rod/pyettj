@@ -128,7 +128,7 @@ maturidades = [1,21,42,63,126,252,504,1008,1260,1890,2520]
 taxas = []
 
 for x in maturidades:
-    taxa = ettj_svensson(beta1, beta2, beta3, beta4, lambda1, lambda2, x/252)
+    taxa = modelo_ettj.svensson(beta1, beta2, beta3, beta4, lambda1, lambda2, x/252)
     taxas.append(taxa)
 
 pd.DataFrame(np.array([taxas]), columns=[x/252 for x in maturidades]).T.multiply(100).plot()
