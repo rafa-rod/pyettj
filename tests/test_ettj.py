@@ -48,4 +48,18 @@ class TestClass():
         taxa = svensson(0.13, 0.03, 0.03, 0.03, 1.97, 0.93, 1/252)
         assert round(taxa,2) == 0.16
 
+    def get_ettj_anbima(self):
+        data = "15/09/2022"
+        parametros_curva, ettj, taxa, erros = get_ettj_anbima(data)
+        assert not parametros_curva.empty
+        assert not ettj.empty
+        assert not taxa.empty
+        assert not erros.empty
+
+    def test_ettj2(self):
+        data = "15/09/2022"
+        curva = "pre"
+        ettj_pre = get_ettj(data, curva)
+        assert not ettj_pre.empty
+
 TestClass()

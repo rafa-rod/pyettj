@@ -33,15 +33,40 @@ pip install pyettj
 
 ## Exemplo de Uso
 
-Para caputar os dados, basta informar a data:
+Para caputar todos os dados disponíveis, basta informar a data:
 
 ```python
-from pyettj import ettj
+import pyettj.ettj as ettj
 data = '18/05/2021'
 ettj_dataframe = ettj.get_ettj(data)
 ```
 
-Todas as curvas disponíveis são disponibilizadas, para selecionar a desejada basta filtrar o `pandas.DataFrame` resultante.
+Caso deseje apenas uma curva específica, basta informá-la:
+
+```python
+import pyettj.ettj as ettj
+data = '18/05/2021'
+ettj_dataframe = ettj.get_ettj(data, curva="PRE")
+```
+
+Se for necessário usar proxy, passe a informação à função:
+
+Caso deseje apenas uma curva específica, basta informá-la:
+
+```python
+import pyettj.ettj as ettj
+import getpass
+
+USER = getpass.getuser() #usar getpass
+PWD = getpass.getpass("Senha de rede: ")
+PROXY = "servidor"
+PORTA = 4300
+
+proxies = {"http":f'http://{USER}:{PWD}@{PROXY}:{PORTA}',
+           "https":f'https://{USER}:{PWD}@{PROXY}{PORTA}'}
+
+ettj_dataframe = ettj.get_ettj(data, curva="PRE", proxies=proxies)
+```
 
 E para plotar o gráfico da curva, invoque a função de plotagem da biblioteca:
 
@@ -73,4 +98,38 @@ A variável `todas_datas` possuirá todas as curvas em cada data do intervalo. P
 
 ```python
 todas_datas.Data.unique().tolist()
+```
+
+Você pode obter dados os dados da ANBIMA - Estrutura a Termo das Taxas de Juros Estimada disponível em: https://www.anbima.com.br/informacoes/est-termo/CZ.asp
+
+```python
+import pyettj.modelo_ettj as modelo_ettj
+
+parametros_curva, ettj, taxa, erros = modelo_ettj.get_ettj_anbima("15/09/2022")
+```
+
+A partir dos parâmetros estimados pela ANBIMA, você pode obter usar a equação de Svensson:
+
+```python
+curva = parametros_curva.loc["PREFIXADOS", :].str.replace(",",".").astype(float)
+
+beta1, beta2, beta3, beta4 = curva[:4]
+lambda1, lambda2 = curva[4:]
+t = 21/252 #em anos
+
+taxa = modelo_ettj.svensson(beta1, beta2, beta3, beta4, lambda1, lambda2, t)
+print(taxa)
+```
+
+Para coletar as taxas em diversas maturidades:
+
+```python
+maturidades = [1,21,42,63,126,252,504,1008,1260,1890,2520]
+taxas = []
+
+for x in maturidades:
+    taxa = ettj_svensson(beta1, beta2, beta3, beta4, lambda1, lambda2, x/252)
+    taxas.append(taxa)
+
+pd.DataFrame(np.array([taxas]), columns=[x/252 for x in maturidades]).T.multiply(100).plot()
 ```
