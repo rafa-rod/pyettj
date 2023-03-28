@@ -57,7 +57,10 @@ def get_ettj_anbima(data: str, proxies: Union[Dict[str, str], None] = None) -> U
             erros = pd.concat([erros, curva])
     ettj = ettj.rename(columns={"Inflacao":"Inflação Implícita"})
     taxa = taxa.rename(columns={"Taxa":"Taxa Prefixada"})
-    return parametros_curva.set_index("Grupo"), ettj, taxa, erros
+    if parametros_curva.empty or ettj.empty or taxa.empty:
+        raise ValueError("Sem dados para a data selecionada")
+    else:
+        return parametros_curva.set_index("Grupo"), ettj, taxa, erros
 
 
 def svensson(beta1: float, beta2: float, beta3: float, beta4: float, lambda1: float, lambda2: float, t: float) -> float:
