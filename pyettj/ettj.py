@@ -57,56 +57,58 @@ def get_ettj(data: str, curva: str = "TODOS", proxies: Union[Dict[str, str], Non
     '''
     start = time.time()
 
-    data = _treat_parameters(data)
-
-    #data = pd.to_datetime(data).strftime("%d/%m/%Y")
     curva = curva.upper()
     if curva == "TODOS":
         url = "http://www2.bmf.com.br/pages/portal/bmfbovespa/boletim1/TxRef1.asp?Data={}&Data1=20060201&slcTaxa={}".format(data,curva)
     else:
         url = f"http://www2.bmf.com.br/pages/portal/bmfbovespa/lumis/lum-taxas-referenciais-bmf-ptBR.asp?Data={data}&Data1=20060201&slcTaxa={curva}"
     
-    try:
-        if proxies:
-            page = requests.get(url, proxies=proxies, verify=False)
-            pagetext = page.text
-        else:
-            page = requests.get(url)
-            pagetext = page.text
-    except:
-        raise Exception("Não foi possível conectar ao website. Tente novamente mais tarde.")
-
-    if curva == "TODOS":
-        soup = BeautifulSoup(pagetext, 'lxml')
-        table1 = soup.find_all('table')[1]
-        if 'Não há dados para a data fornecida' in table1.text.strip():
-            raise ValueError("Não há dados para a data fornecida. Dados a partir de 02/01/2004.")
-        else:
-            table2 = soup.find_all('table')[2]
-            table3 = soup.find_all('table')[3]
-            table4 = soup.find_all('table')[4]
-
-            pandas_table1 = gettables.get_table(table1)
-            pandas_table2 = gettables.get_table(table2)
-            pandas_table3 = gettables.get_table(table3)
-            pandas_table4 = gettables.get_table(table4)
-
-            final_table_pandas = pd.concat([pandas_table1, pandas_table2, pandas_table3, pandas_table4], axis=1)
-            final_table_pandas["Data"] = data
-            final_table_pandas = final_table_pandas.loc[:,~final_table_pandas.columns.duplicated()]
-            final_table_pandas.columns = final_table_pandas.columns.str.split('(').str.get(0).str.strip()
-            print("Curvas capturadas em {} segundos.".format(round(time.time()-start,2)))
-            return final_table_pandas
+    session = requests.Session()
+    session.trust_env = False
+    if proxies:
+        page = session.get(url, proxies=proxies, verify=False)
     else:
-        final_table_pandas = pd.read_html(pagetext, flavor="bs4")[0]
-        final_table_pandas.columns = final_table_pandas.columns.to_flat_index()
-        final_table_pandas.columns = [final_table_pandas.columns[x][0] if x==0 else final_table_pandas.columns[x][0]+" "+final_table_pandas.columns[x][1] for x in range(len(final_table_pandas.columns))]
-        for cols in final_table_pandas.columns[1:]:
-            final_table_pandas[cols] = final_table_pandas[cols]/100
-        print("Curva capturada em {} segundos.".format(round(time.time()-start,2)))
-        return final_table_pandas
+        page = session.get(url)
+        
+    if page.status_code==404:
+        raise Exception("Página não encontrada.")
+    if page.status_code==407:
+        raise Exception("Necessária autenticação de proxy.")
+    elif page.status_code==502:
+        raise Exception("Não foi possível conectar ao website. Tente novamente mais tarde. Bad Gateway")
+    elif page.status_code==200:
+        pagetext = page.text
+        if curva == "TODOS":
+            soup = BeautifulSoup(pagetext, 'lxml')
+            table1 = soup.find_all('table')[1]
+            if 'Não há dados para a data fornecida' in table1.text.strip():
+                raise ValueError("Não há dados para a data fornecida. Dados a partir de 02/01/2004.")
+            else:
+                table2 = soup.find_all('table')[2]
+                table3 = soup.find_all('table')[3]
+                table4 = soup.find_all('table')[4]
 
-def plot_ettj(ettj: pd.DataFrame, curva: str, data: str, **opcionais: Any) -> None:
+                pandas_table1 = gettables.get_table(table1)
+                pandas_table2 = gettables.get_table(table2)
+                pandas_table3 = gettables.get_table(table3)
+                pandas_table4 = gettables.get_table(table4)
+
+                final_table_pandas = pd.concat([pandas_table1, pandas_table2, pandas_table3, pandas_table4], axis=1)
+                final_table_pandas["Data"] = data
+                final_table_pandas = final_table_pandas.loc[:,~final_table_pandas.columns.duplicated()]
+                final_table_pandas.columns = final_table_pandas.columns.str.split('(').str.get(0).str.strip()
+                print("Curvas capturadas em {} segundos.".format(round(time.time()-start,2)))
+                return final_table_pandas
+        else:
+            final_table_pandas = pd.read_html(pagetext, flavor="bs4")[0]
+            final_table_pandas.columns = final_table_pandas.columns.to_flat_index()
+            final_table_pandas.columns = [final_table_pandas.columns[x][0] if x==0 else final_table_pandas.columns[x][0]+" "+final_table_pandas.columns[x][1] for x in range(len(final_table_pandas.columns))]
+            for cols in final_table_pandas.columns[1:]:
+                final_table_pandas[cols] = final_table_pandas[cols]/100
+            print("Curva capturada em {} segundos.".format(round(time.time()-start,2)))
+            return final_table_pandas
+
+def plot_ettj(ettj: pd.DataFrame, curva: str, data: [str, None] = None, **opcionais: Any) -> None:
     '''Plota curva desejada.
         Parâmetros:
             ettj  (dataframe) => dados obtidos pela função get_ettj em data específica.
@@ -116,8 +118,8 @@ def plot_ettj(ettj: pd.DataFrame, curva: str, data: str, **opcionais: Any) -> No
             gráfico ettj (taxa x maturidade)
     '''
     ettj_ = ettj.copy()
-    data = pd.to_datetime(data).strftime("%d/%m/%Y")
-    ettj_ = ettj_[ettj_.Data==data]
+    if "Data" in ettj_.columns:
+        ettj_ = ettj_[ettj_.Data==data]
     ettj_.index = ettj_[ettj_.columns[0]]
     ettj_ = ettj_[[curva]]
 
