@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 import pytest, sys
 
-sys.path.append("./pyettj/")
-sys.path.append("./pyettj/pyettj/")
+sys.path.append("./src/pyettj")
 
 from ettj import get_ettj, plot_ettj, listar_dias_uteis
 from modelo_ettj import get_ettj_anbima, svensson
 
-data = "2021/05/18"
+data = "27/03/2023"
 
 class TestClass():
 
@@ -49,7 +48,7 @@ class TestClass():
         assert round(taxa,2) == 0.16
 
     def get_ettj_anbima(self):
-        data = "15/09/2022"
+        data = "28/03/2023"
         parametros_curva, ettj, taxa, erros = get_ettj_anbima(data)
         assert not parametros_curva.empty
         assert not ettj.empty

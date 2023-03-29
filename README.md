@@ -133,3 +133,33 @@ for x in maturidades:
 
 pd.DataFrame(np.array([taxas]), columns=[x/252 for x in maturidades]).T.multiply(100).plot()
 ```
+
+Caso você não possua os parâmetros da curva Svensson, pode-se estimá-los conforme script a seguir:
+
+```python
+data = '20/03/2023'
+ettj_dataframe = ettj.get_ettj(data, curva="PRE")
+
+t = ettj_dataframe[ettj_dataframe.columns[0]].divide(252).values
+y = ettj_dataframe[ettj_dataframe.columns[1]].divide(100).values
+
+beta1, beta2, beta3, beta4, lambda1, lambda2 = modelo_ettj.calibrar_curva_svensson(t, y)
+
+maturidades = [1,21,42,63,126,252,504,1008,1260,1890,2520]
+taxas = []
+
+for x in maturidades:
+    taxa = modelo_ettj.svensson(beta1, beta2, beta3, beta4, lambda1, lambda2, x/252)
+    taxas.append(taxa)
+
+ettj_pre = pd.DataFrame(np.array([taxas]), columns=[x/252 for x in maturidades]).T.multiply(100)
+
+plt.figure(figsize=(10,5))
+plt.plot(ettj_pre)
+plt.title("ETTJ PREFIXADA")
+plt.show()
+```
+
+<center>
+<img src="https://github.com/rafa-rod/pyettj/blob/main/media/pre_estimada.png" style="width:60%;"/>
+</center>
