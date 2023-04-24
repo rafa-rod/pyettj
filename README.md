@@ -90,7 +90,9 @@ datas = ettj.listar_dias_uteis(de, ate)
 
 todas_datas = pd.DataFrame()
 for dat in datas:
-    dados=ettj.get_ettj(dat)
+    ano, mes, dia = dat.split("-")
+    data = "/".join([dia, mes, ano])
+    dados = ettj.get_ettj(dat)
     todas_datas=pd.concat([dados, todas_datas])
 ```
 
