@@ -57,7 +57,7 @@ Caso deseje apenas uma curva específica, basta informá-la:
 import pyettj.ettj as ettj
 import getpass
 
-USER = getpass.getuser() #usar getpass
+USER = getpass.getuser()
 PWD = getpass.getpass("Senha de rede: ")
 PROXY = "servidor"
 PORTA = 4300
@@ -92,7 +92,7 @@ todas_datas = pd.DataFrame()
 for dat in datas:
     ano, mes, dia = dat.split("-")
     data = "/".join([dia, mes, ano])
-    dados = ettj.get_ettj(dat)
+    dados = ettj.get_ettj(data)
     todas_datas=pd.concat([dados, todas_datas])
 ```
 
