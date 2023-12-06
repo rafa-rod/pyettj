@@ -71,11 +71,11 @@ def get_ettj(
 
     curva = curva.upper()
     if curva == "TODOS":
-        url = "http://www2.bmf.com.br/pages/portal/bmfbovespa/boletim1/TxRef1.asp?Data={}&Data1=20060201&slcTaxa={}".format(
+        url = "https://www2.bmf.com.br/pages/portal/bmfbovespa/boletim1/TxRef1.asp?Data={}&Data1=20060201&slcTaxa={}".format(
             data, curva
         )
     else:
-        url = f"http://www2.bmf.com.br/pages/portal/bmfbovespa/lumis/lum-taxas-referenciais-bmf-ptBR.asp?Data={data}&Data1=20060201&slcTaxa={curva}"
+        url = f"https://www2.bmf.com.br/pages/portal/bmfbovespa/lumis/lum-taxas-referenciais-bmf-ptBR.asp?Data={data}&Data1=20060201&slcTaxa={curva}"
 
     session = requests.Session()
     session.trust_env = False
