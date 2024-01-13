@@ -5,7 +5,7 @@ import os
 
 this_directory = os.path.abspath(os.path.dirname(__file__))
 
-with open(os.path.join(this_directory, 'README_pypi.md'), encoding="utf-8") as f:
+with open(os.path.join(this_directory, 'README.md'), encoding="utf-8") as f:
     long_description = f.read()
 
 with open(os.path.join(this_directory,'version.py'), encoding="utf-8") as f:
