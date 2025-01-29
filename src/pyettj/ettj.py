@@ -5,7 +5,7 @@ import pandas as pd  # type: ignore
 import matplotlib.pyplot as plt
 
 plt.style.use("fivethirtyeight")  # type: ignore
-import gettables
+from pyettj import gettables
 import bizdays, os
 from typing import Any, List, Union, Dict
 
