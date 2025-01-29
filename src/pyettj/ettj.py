@@ -5,7 +5,7 @@ import pandas as pd  # type: ignore
 import matplotlib.pyplot as plt
 
 plt.style.use("fivethirtyeight")  # type: ignore
-from pyettj import gettables
+import gettables
 import bizdays, os
 from typing import Any, List, Union, Dict
 
@@ -27,7 +27,7 @@ def _treat_parameters(data):
         )
     elif isinstance(data, str):
         try:
-            data = pd.to_datetime(data).strftime("%d/%m/%Y")
+            data = pd.to_datetime(data,  dayfirst=True).strftime("%d/%m/%Y")
             return data
         except:
             raise ValueError(
@@ -48,8 +48,8 @@ def listar_dias_uteis(de: str, ate: str) -> List[str]:
     ate = _treat_parameters(ate)
     holidays = bizdays.load_holidays(os.path.join(path_feriados, "Feriados.csv"))
     cal = bizdays.Calendar(holidays, ["Sunday", "Saturday"], name="Brazil")
-    dataIni = pd.to_datetime(de).strftime("%Y-%m-%d")
-    dataFim = pd.to_datetime(ate).strftime("%Y-%m-%d")
+    dataIni = pd.to_datetime(de, dayfirst=True).strftime("%Y-%m-%d")
+    dataFim = pd.to_datetime(ate, dayfirst=True).strftime("%Y-%m-%d")
     dias_uteis = list(cal.seq(dataIni, dataFim))
     dias_uteis = [str(x).split(" ")[0] for x in dias_uteis]
     dias_uteis.sort()

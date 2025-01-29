@@ -19,16 +19,16 @@ class TestClass():
     def test_listar_dias_uteis(self):
         de = "2021/05/13"
         ate = data
-        datas=listar_dias_uteis(de, ate)
+        datas = listar_dias_uteis(de, ate)
         with pytest.raises(Exception) as error4:
             de = 12
             ate = "2021/05/13"
-            datas=listar_dias_uteis(de, ate)
+            datas = listar_dias_uteis(de, ate)
         assert str(error4.value) == "O parametro data deve ser em formato string, exemplo: '18/05/2021'"
         with pytest.raises(Exception) as error5:
             de = "13/05/2021"
             ate = 34
-            datas=listar_dias_uteis(de, ate)
+            datas = listar_dias_uteis(de, ate)
         assert str(error5.value) == "O parametro data deve ser em formato string, exemplo: '18/05/2021'"
 
     def test_plot_ettj(self):
