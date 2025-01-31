@@ -1,19 +1,33 @@
 [tool.poetry]
 name = "pyettj"
-version = "0.3.2"
+version = "0.3.3"
 description = "Coletar e tratar dados de curvas de juros (ettj)."
 authors = ["Rafael Rodrigues <rafael.rafarod@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
-pandas = "^2.2.3"
+python = "^3.8.5"
+pandas = [
+    {version = "<=1.5.3", python = "<=3.9"},
+    {version = ">=2.2.3", python = ">=3.10"}
+]
 requests = "^2.32.3"
 lxml = "^5.3.0"
 bs4 = "^0.0.2"
 nelson-siegel-svensson = "^0.5.0"
-bizdays = "^1.0.16"
+numpy = [
+    {version = "<1.26.0", python = "<=3.9"},
+    {version = ">=1.26.0", python = ">=3.10"}
+]
+scipy = [
+    {version = ">=1.7,<1.9.1", python = "<3.9"},
+    {version = ">=1.13.1", python = ">=3.9"}
+]
+bizdays = [
+    {version = "<=1.0.13", python = "<=3.9"},
+    {version = ">=1.0.16", python = ">=3.10"}
+]
 matplotlib = [
     {version = "<=3.7.1", python = "<=3.9"},
     {version = ">=3.10.0", python = ">=3.10"}
