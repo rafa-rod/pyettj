@@ -179,10 +179,10 @@ Uma vez determinadas as funções de volatilidades $\sigma_j$ e os valores para 
 fator $\xi_j$, $j = 1, 2, 3$, a curva de estresse para um _holding period_ de $HP$ dias úteis
 pode ser construída como segue para cada maturidade $T_i$:
 
-\begin{align}
+$$
 r\_{0+HP}(T_i) &= r_0(T_i) + \frac{HP}{252} \mu(T_i) \nonumber \\
 &\quad + \sqrt{\frac{HP}{252}} \left[ \sigma_1(T_i)\xi_1 + \sigma_2(T_i)\xi_2 + \sigma_3(T_i)\xi_3 \right] \tag{22}
-\end{align}
+$$
 
 O uso de três fatores é suficiente para descrever mais de 95% da variação da taxa de juros, segundo o referido estudo. Em termos de PCA (análise de componentes principais), são usados os três maiores autovalores, identificados como a representação dos movimentos de deslocamento paralelo, inclinação e curvatura.
 
@@ -263,7 +263,7 @@ pontos_base_estresses_historicos_pre
 
 
 #3. Modelo HJM:
-modelo = HJM.ModeloHJM(convencao_dias=252, n_comp=3, verbose=1)
+modelo = HJM.ModeloHJM(convencao_dias=252, verbose=1)
 
 #sempre usar dias uteis conforme dados oriundos do pyettj acima
 vertices_calibracao = [21, 42, 210, 2520]
@@ -322,7 +322,7 @@ plt.show()
 ```
 
 <center>
-<img src="https://github.com/rafa-rod/pyettj/blob/main/media/curva_estressada_hjm.png" style="width:90%;"/>
+<img src="https://github.com/rafa-rod/pyettj/blob/main/media/curva_estressada_hjm.png" style="width:60%;"/>
 </center>
 
 Para visualizar os parâmetros e demais resultados:
