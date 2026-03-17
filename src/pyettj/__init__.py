@@ -1,8 +1,23 @@
-from .ettj import get_ettj, plot_ettj, listar_dias_uteis
-from .modelo_ettj import *
 from . import version
+from .ettj import get_ettj, get_ettj_anbima, listar_dias_uteis, plot_ettj
+from .HJM import ModeloHJM, ParametrosOtimizacao, ResultadoCalibracao
+from .modelo_ettj import svensson
 
 __version__ = version.__version__
 __author__ = "Rafael Rodrigues, rafa-rod @ GitHub"
 
-__all__ = ["get_ettj", "plot_ettj", "listar_dias_uteis", "get_ettj_anbima", "svensson"]
+__all__ = [
+    # Versão
+    "__version__",
+    "__author__",
+    # ETTJ
+    "get_ettj",
+    "get_ettj_anbima",
+    "plot_ettj",
+    "listar_dias_uteis",
+    # Modelos
+    "svensson",
+    "ModeloHJM",
+    "ParametrosOtimizacao",
+    "ResultadoCalibracao",
+]
