@@ -413,7 +413,7 @@ class ModeloHJM:
             Permite method chaining
         """
         self._log("Iniciando calibração...", nivel=1)
-        self.taxas = taxas
+        self.taxas = taxas.copy()
 
         self.vertices_dias = vertices_calibracao
         self.vertices_ano = self._dias_para_anos(

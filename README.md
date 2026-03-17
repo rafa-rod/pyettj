@@ -139,6 +139,8 @@ pd.DataFrame(np.array([taxas]), columns=[x/252 for x in maturidades]).T.multiply
 Caso você não possua os parâmetros da curva Svensson, pode-se estimá-los conforme script a seguir:
 
 ```python
+import matplotlib.pyplot as plt
+
 data = '20/03/2023'
 ettj_dataframe = ettj.get_ettj(data, curva="PRE")
 
@@ -201,6 +203,10 @@ O dataframe `dados_historicos_taxas` contem dados históricos obtidos usando `et
 import pyettj.HJM as HJM
 import pyettj.ettj as ettj
 import pandas as pd
+import numpy as np
+
+import seaborn as sns; sns.set_style("white")
+import matplotlib.pyplot as plt
 
 #1. Coleta dos Dados:
 de = '13/05/2019'
@@ -249,14 +255,12 @@ No índice estão as datas de coleta das taxas da curva e o nome das colunas sã
 #2 - Analisar os dados:
 # Recomendo fortemente verificar dados faltantes e valores *estranhos*
 # Use ferramentas gráficas para ajudar como:
-import seaborn as sns; sns.set_style("white")
-
 HP = 10
 choques_historicos_pre = taxa_pre.diff(HP).dropna()
 
-sns.distplot(choques_historicos_pre["PRE210"])
+sns.distplot(choques_historicos_pre["210"])
 
-sns.boxplot(data=choques_historicos_pre["PRE210"])
+sns.boxplot(data=choques_historicos_pre["210"])
 
 #Veja também os choques históricos. Isso ajuda para construir cenários e saber o nível dos choques:
 
@@ -272,7 +276,7 @@ pontos_base_estresses_historicos_pre
 modelo = HJM.ModeloHJM(convencao_dias=252, verbose=1)
 
 #sempre usar dias uteis conforme dados oriundos do pyettj acima
-vertices_calibracao = [21, 42, 210, 2520]
+vertices_calibracao = [420, 840, 1050, 2520]
 
 modelo.calibrar(taxa_pre, vertices_calibracao)
 if modelo.calibrado:
@@ -344,8 +348,8 @@ print("=== Resumo do Modelo ===")
 resumo = modelo.resumo()
 print(resumo)
 
-print(f"Número de componentes: {resultado.num_componentes}")
+print(f"Número de componentes: {modelo.num_componentes}")
 
 # Vértices usados na calibração (em dias)
-print(f"Vértices: {resultado.vertices_dias}")
+print(f"Vértices: {modelo.vertices_dias}")
 ```
