@@ -180,9 +180,15 @@ fator $\xi_j$, $j = 1, 2, 3$, a curva de estresse para um _holding period_ de $H
 pode ser construída como segue para cada maturidade $T_i$:
 
 $$
-r\_{0+HP}(T_i) &= r_0(T_i) + \frac{HP}{252} \mu(T_i) \nonumber \\
-&\quad + \sqrt{\frac{HP}{252}} \left[ \sigma_1(T_i)\xi_1 + \sigma_2(T_i)\xi_2 + \sigma_3(T_i)\xi_3 \right] \tag{22}
+r_{0+HP}(T_i) = r_0(T_i) + \frac{HP}{252} \mu(T_i) + \sqrt{\frac{HP}{252}} \sum_{j=1}^{3} \sigma_j(T_i)\xi_j
 $$
+
+onde:
+
+- $HP$ é o _holding period_ em dias úteis
+- $\mu(T_i)$ é o _drift_ oriundo da equação diferencial estocástica multivariada
+- $\sigma_j(T_i)$ são as volatilidades dos fatores
+- $\xi_j$ são os choques dos fatores
 
 O uso de três fatores é suficiente para descrever mais de 95% da variação da taxa de juros, segundo o referido estudo. Em termos de PCA (análise de componentes principais), são usados os três maiores autovalores, identificados como a representação dos movimentos de deslocamento paralelo, inclinação e curvatura.
 
