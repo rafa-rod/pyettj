@@ -378,16 +378,17 @@ class ModeloHJM:
             return pd.to_datetime(data_normalized)
 
     @staticmethod
-    def _padronizar_colunas(colunas_df: pd.Index) -> pd.Index:
+    def _padronizar_colunas(
+        colunas_df: List[str | int | float], convencao_dias: int
+    ) -> List[float]:
         """
         Padroniza colunas do DataFrame para float
         """
         colunas_padronizadas = []
         for col in colunas_df:
-            try:
-                colunas_padronizadas.append(float(col))
-            except (ValueError, TypeError):
-                colunas_padronizadas.append(col)
+            dias = int(col)
+            anos = dias / convencao_dias
+            colunas_padronizadas.append(float(anos))
         return pd.Index(colunas_padronizadas)
 
     def calibrar(
@@ -409,6 +410,7 @@ class ModeloHJM:
         Retorna:
         --------
         self : ModeloHJM
+            Permite method chaining
         """
         self._log("Iniciando calibração...", nivel=1)
         self.taxas = taxas
@@ -421,8 +423,11 @@ class ModeloHJM:
         self._log(f"Vértices (dias): {self.vertices_dias}", nivel=2)
         self._log(f"Vértices (anos): {self.vertices_ano}", nivel=2)
 
-        colunas_df = self._padronizar_colunas(taxas.columns)
+        colunas_df = self._padronizar_colunas(self.taxas.columns, self.convencao_dias)
+        self.taxas.columns = colunas_df
         colunas_existentes = [v for v in self.vertices_ano if v in colunas_df]
+        print(f"colunas_df {colunas_df}")
+        print(f"colunas_existentes {colunas_existentes}")
 
         if len(colunas_existentes) == 0:
             raise ValueError(
@@ -435,7 +440,7 @@ class ModeloHJM:
             faltantes = set(self.vertices_ano) - set(colunas_existentes)
             self._log(f"Aviso: Colunas não encontradas: {faltantes}", nivel=1)
 
-        taxas_filtrado = taxas[colunas_existentes]
+        taxas_filtrado = self.taxas[colunas_existentes]
 
         diff_taxas = taxas_filtrado.diff().dropna()
         diff_taxas_norm = (diff_taxas - diff_taxas.mean()).divide(diff_taxas.std())
@@ -620,7 +625,9 @@ class ModeloHJM:
             choques_series = self.taxas.iloc[loc2].values - self.taxas.iloc[loc1].values
             choques_series = pd.Series(choques_series, index=self.taxas.columns)
 
-            colunas_df = self._padronizar_colunas(choques_series.index)
+            colunas_df = self._padronizar_colunas(
+                choques_series.index, self.convencao_dias
+            )
             choques_series.index = colunas_df
 
             choques_observados = []
@@ -633,7 +640,8 @@ class ModeloHJM:
             vertices_choques_dias, self.convencao_dias
         )
         vertices_saida_ano = self._dias_para_anos(
-            self._padronizar_colunas(self.taxas.columns), self.convencao_dias
+            self._padronizar_colunas(self.taxas.columns, self.convencao_dias),
+            self.convencao_dias,
         )
 
         choques_modelo = self._calcular_choques_interno(

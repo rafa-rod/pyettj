@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import getpass
 import time
-from io import BytesIO
+from io import BytesIO, StringIO
 from os.path import join as joinpath
 from pathlib import Path
 
@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Union
 
 import bizdays  # noqa: E402
 
-from pyettj import gettables
+from . import gettables
 
 warnings.filterwarnings("ignore")
 
@@ -88,26 +88,21 @@ def feriados(override: bool = False, ligar_proxy: bool = True) -> None:
                 "https://www.anbima.com.br/feriados/arqs/feriados_nacionais.xls",
                 proxies=proxies,
                 verify=True,
-                timeout=30,  # Timeout de 30 segundos
+                timeout=30,
             )
 
             if response.status_code == 200:
                 print("Download realizado com sucesso!")
 
-                # Ler o arquivo Excel
                 df = pd.read_excel(BytesIO(response.content), engine="calamine")
 
-                # Processar os feriados
                 fonte_index = df[df["Data"] == "Fonte: ANBIMA"].index
 
                 if len(fonte_index) > 0:
-                    # Pega as datas até a linha antes do footer
                     feriados_datas = df["Data"][: fonte_index[0]].values
                 else:
-                    # Se não encontrar o footer, pega todas as datas não nulas
                     feriados_datas = df["Data"].dropna().values
 
-                # Criar DataFrame com os feriados
                 feriados_df = pd.DataFrame(
                     {"Feriados ANBIMA": pd.to_datetime(feriados_datas).values}
                 )
@@ -121,7 +116,6 @@ def feriados(override: bool = False, ligar_proxy: bool = True) -> None:
         except Exception as e:
             print(f"Erro durante o download: {e}")
 
-            # Se falhou o download mas existe arquivo antigo, tenta usar ele
             if arquivo_existe:
                 print("Tentando usar arquivo existente...")
                 feriados_df = pd.read_csv(arquivo_feriados)
@@ -143,14 +137,28 @@ def listar_dias_uteis(
     Retorno:
         dias_uteis (lista): lista contendo dias úteis no intervalo apontado.
     """
-    try:
-        downloads_path = joinpath(str(Path.home()), "Downloads")
-        path_feriados = joinpath(downloads_path, "Feriados.csv")
-        feriados(override, ligar_proxy)
-    except:
-        path_feriados = os.path.realpath(__file__).split(".py")[0][:-4]
 
-    holidays = bizdays.load_holidays(os.path.join(path_feriados, "Feriados.csv"))
+    downloads_path = Path.home() / "Downloads"
+    arquivo_feriados_downloads = downloads_path / "Feriados.csv"
+
+    # pasta onde este arquivo (ettj.py) está localizado
+    pasta_pacote = Path(__file__).parent
+    arquivo_feriados_pacote = pasta_pacote / "Feriados.csv"
+
+    try:
+        feriados(override, ligar_proxy)
+        caminho_feriados = arquivo_feriados_downloads
+    except Exception:
+        if arquivo_feriados_pacote.exists():
+            caminho_feriados = arquivo_feriados_pacote
+        else:
+            raise FileNotFoundError(
+                f"Arquivo de feriados não encontrado em:\n"
+                f"1. {arquivo_feriados_downloads}\n"
+                f"2. {arquivo_feriados_pacote}"
+            )
+
+    holidays = bizdays.load_holidays(str(caminho_feriados))
     cal = bizdays.Calendar(holidays, ["Sunday", "Saturday"], name="Brazil")
     de = _treat_parameters(de)
     ate = _treat_parameters(ate)
@@ -173,6 +181,7 @@ def get_ettj(
     Retorno:
         final_table_pandas (dataframe): dataframe contendo todas as curvas, maturidade e data solicitada.
     """
+    data = _treat_parameters(data)
     start = time.time()
 
     curva = curva.upper()
@@ -239,7 +248,7 @@ def get_ettj(
                 )
                 return final_table_pandas
         else:
-            final_table_pandas = pd.read_html(pagetext, flavor="bs4")[0]
+            final_table_pandas = pd.read_html(StringIO(pagetext), flavor="bs4")[0]
             final_table_pandas.columns = final_table_pandas.columns.to_flat_index()
             final_table_pandas.columns = [
                 final_table_pandas.columns[x][0]

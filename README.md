@@ -165,3 +165,181 @@ plt.show()
 <center>
 <img src="https://github.com/rafa-rod/pyettj/blob/main/media/pre_estimada.png" style="width:60%;"/>
 </center>
+
+# Geração de Cenários de Estresse para Curva de Juros usando Heath-Jarrow-Morton (HJM)
+
+Baseado no artigo de:
+Dario, A.D.G. and Fernández, M., 2011. Geraçao de Cenarios de Estresse para Curva de Juros. Brazilian Review of Finance, 9(3), pp.413-436.
+
+O modelo HJM facilita a incorporação de opinião de especialistas na construção de cenários de estresse das curvas de juros. Além disso, segundo o estudo, o modelo HJM se mostra superior ao modelo de Nelson-Siegel-Svensson (NSS).
+
+Ele modela a estrutura de volatilidade do processo das taxas e pode ser descrito usando apenas 3 componentes (3 fatores) que explicam mais de 95% da variação das taxas de juros: 1- nível, 2- inclinação e 3- curvatura.
+
+Uma vez determinadas as funções de volatilidades $\sigma_j$ e os valores para cada
+fator $\xi_j$, $j = 1, 2, 3$, a curva de estresse para um _holding period_ de $HP$ dias úteis
+pode ser construída como segue para cada maturidade $T_i$:
+
+\begin{align}
+r\_{0+HP}(T_i) &= r_0(T_i) + \frac{HP}{252} \mu(T_i) \nonumber \\
+&\quad + \sqrt{\frac{HP}{252}} \left[ \sigma_1(T_i)\xi_1 + \sigma_2(T_i)\xi_2 + \sigma_3(T_i)\xi_3 \right] \tag{22}
+\end{align}
+
+O uso de três fatores é suficiente para descrever mais de 95% da variação da taxa de juros, segundo o referido estudo. Em termos de PCA (análise de componentes principais), são usados os três maiores autovalores, identificados como a representação dos movimentos de deslocamento paralelo, inclinação e curvatura.
+
+Contudo, conforme minhas experiências, o uso de 3 fatores depende dos dados de calibração e forma de otimização. Aqui o algoritmo já possui ajustes de otimização para facilitar encontrar resposta ótima mais adequada, mas qualquer método que use PCA (análise de componentes principais) depende fortemente da qualidade dos dados (_missing values_ e _outliers_ influenciam muito).
+
+Mais detalhes podem ser vistos no referido artigo, vamos para um exemplo de implementação.
+O dataframe `dados_historicos_taxas` contem dados históricos obtidos usando `ettj.get_ettj(data)`
+
+```python
+import pyettj.HJM as HJM
+import pyettj.ettj as ettj
+import pandas as pd
+
+#1. Coleta dos Dados:
+de = '13/05/2019'
+ate ='18/02/2026'
+datas = ettj.listar_dias_uteis(de, ate)
+
+def obter_dados_e_preparar_dataframe(datas, curva = 'DI x pré 252', vertices = None) -> pd.DataFrame:
+    dados_historicos_taxas = pd.DataFrame()
+    for dat in tqdm(datas):
+        ano, mes, dia = dat.split("-")
+        data = "/".join([dia, mes, ano])
+        dados = ettj.get_ettj(data)
+        dados_historicos_taxas = pd.concat([dados, dados_historicos_taxas])
+    taxa_pre = dados_historicos_taxas[['Data', 'Dias Corridos', curva]].set_index('Data')
+    taxa_pre.columns = ["Dias", curva]
+    taxa_pre['colunas'] = taxa_pre["Dias"]
+
+    taxa_pre = taxa_pre.pivot_table(values=curva, columns="colunas", index=taxa_pre.index)
+    colunas_ordenadas = sorted(taxa_pre.columns)
+    taxa_pre = taxa_pre[colunas_ordenadas]
+
+    if vertices:
+        taxa_pre = taxa_pre[[col for col in taxa_pre.columns if col in vertices]]
+        return taxa_pre
+    else:
+        return taxa_pre.dropna(axis=1)
+
+taxa_pre = obter_dados_e_preparar_dataframe(datas, curva = 'DI x pré 252')
+```
+
+O exemplo de saida para esse dataframe é:
+
+```
+| Data       |      210 |      420 |      630 |      840 |      1050 |      2520 |
+|------------|----------|----------|----------|----------|-----------|-----------|
+| 13/05/2019 |     6.41 |     6.56 |     6.99 |     7.38 |      7.73 |      8.81 |
+| 14/05/2019 |     6.4  |     6.51 |     6.92 |     7.32 |      7.63 |      8.77 |
+| 15/05/2019 |     6.4  |     6.52 |     6.92 |     7.32 |      7.65 |      8.82 |
+| 16/05/2019 |     6.43 |     6.59 |     7.01 |     7.43 |      7.75 |      8.93 |
+| 17/05/2019 |     6.46 |     6.7  |     7.14 |     7.57 |      7.9  |      9.13 |
+```
+
+No índice estão as datas de coleta das taxas da curva e o nome das colunas são renomeadas seguida dos seus respectivos vértices, em dias. Importante ressaltar que haverá bastante dados faltantes (_missing values_), cabe ao usuário selecionar as melhores colunas e interpolar, se for preciso.
+
+```python
+#2 - Analisar os dados:
+# Recomendo fortemente verificar dados faltantes e valores *estranhos*
+# Use ferramentas gráficas para ajudar como:
+import seaborn as sns; sns.set_style("white")
+
+HP = 10
+choques_historicos_pre = taxa_pre.diff(HP).dropna()
+
+sns.distplot(choques_historicos_pre["PRE210"])
+
+sns.boxplot(data=choques_historicos_pre["PRE210"])
+
+#Veja também os choques históricos. Isso ajuda para construir cenários e saber o nível dos choques:
+
+pontos_base_estresses_historicos_pre = pd.concat([
+                                        choques_historicos_pre.quantile(0.99, interpolation="nearest"),
+                                        choques_historicos_pre.quantile(1-0.99, interpolation="nearest")],
+                                                 axis=1)*10_000 #em bps
+pontos_base_estresses_historicos_pre.columns = ["Choques Positivos", "Choques Negativos"]
+pontos_base_estresses_historicos_pre
+
+
+#3. Modelo HJM:
+modelo = HJM.ModeloHJM(convencao_dias=252, n_comp=3, verbose=1)
+
+#sempre usar dias uteis conforme dados oriundos do pyettj acima
+vertices_calibracao = [21, 42, 210, 2520]
+
+modelo.calibrar(taxa_pre, vertices_calibracao)
+if modelo.calibrado:
+    print(f"✅ Calibração concluída! {modelo}")
+
+data_choque = "2026-01-02"
+
+resultado_pos = modelo.aplicar_choques(
+    data_choque=data_choque,
+    vertices_choques_dias=[21, 504, 252*10],
+    choques_observados = np.array([-100, 0, 255])/10_000, #choque dos especialistas em bps
+    hp_dias=10,
+    retornar_detalhes=True
+)
+
+resultado_neg = modelo.aplicar_choques(
+    data_choque=data_choque,
+    vertices_choques_dias=[21, 504, 252*10],
+    choques_observados = np.array([100, 0, -200])/10_000, #choque dos especialistas em bps
+    hp_dias=10,
+    retornar_detalhes=True
+)
+
+#caso precise salvar o modelo:
+caminho_modelo = "modelo_hjm_calibrado.json"
+modelo.salvar(caminho_modelo)
+
+#carregar o modelo que foi salvo:
+modelo_carregado = ModeloHJM.carregar(caminho_modelo, verbose=1)
+```
+
+Para visualizar os choques, use:
+
+```python
+resultado = resultado_neg['curva'][resultado_neg['curva'].columns[1:]]
+resultado.columns = ["Curva Original", "Curva Choque Negativo"]
+resultado = pd.concat([resultado, resultado_pos['curva'][resultado_pos['curva'].columns[2:]] ], axis=1).multiply(100)
+resultado.columns = ["Curva Original", "Curva Choque Positivo", "Curva Choque Negativo"]
+
+plt.figure(figsize=(10,6))
+plt.plot(resultado[["Curva Original"]], 'k--')
+plt.plot(resultado[["Curva Choque Positivo"]], 'b')
+plt.plot(resultado[["Curva Choque Negativo"]], 'r')
+plt.xlabel('Vertice em anos')
+plt.ylabel('% aa\n', loc="top", rotation=0, labelpad=-20)
+locs, vals = plt.yticks()
+plt.yticks(locs, np.round(locs,1))
+plt.suptitle(f'Choques Paralelos na Curva Prefixada em {data_choque}')
+plt.legend(resultado.columns)
+plt.box(False)
+plt.grid(axis="y")
+plt.show()
+```
+
+<center>
+<img src="https://github.com/rafa-rod/pyettj/blob/main/media/curva_estressada_hjm.png" style="width:90%;"/>
+</center>
+
+Para visualizar os parâmetros e demais resultados:
+
+```python
+print("=== Análise de Componentes Principais ===")
+print(modelo.pca)
+
+print("=== Parâmetros Estimados ===")
+print(modelo.parametros)
+
+print("=== Resumo do Modelo ===")
+resumo = modelo.resumo()
+print(resumo)
+
+print(f"Número de componentes: {resultado.num_componentes}")
+
+# Vértices usados na calibração (em dias)
+print(f"Vértices: {resultado.vertices_dias}")
+```
