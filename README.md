@@ -31,6 +31,13 @@ Basta acionar o comando abaixo:
 pip install pyettj
 ```
 
+Ou:
+
+```sh
+python -m pip install git+https://github.com/rafa-rod/pyettj.git
+```
+
+
 ## Exemplo de Uso
 
 Para caputar todos os dados disponíveis, basta informar a data:
