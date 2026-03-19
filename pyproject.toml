@@ -1,11 +1,17 @@
 [tool.poetry]
 name = "pyettj"
 version = "0.3.4"
-description = "Coletar e tratar dados de curvas de juros (ettj)."
+description = "Coletar, tratar dados de curvas de juros (ettj) e modelar curvas com nielson-svensson e HJM"
 authors = ["Rafael Rodrigues <rafael.rafarod@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-packages = [{ include = "pyettj", from = "src" }]
+repository = "https://github.com/rafa-rod/pyettj"
+homepage = "https://github.com/rafa-rod/pyettj"
+keywords = ["curva", "ettj", "risk-management", "juros", "svensson", "mercado-financeiro", "hjm", "anbima", "yield-curve", "financial-market", "quant", "quantitative-finance",
+            "finance", "estresse", "Heath-Jarrow-Morton", "cenario-estresse", "stress-test"]
+packages = [
+    { include = "pyettj", from = "src" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
