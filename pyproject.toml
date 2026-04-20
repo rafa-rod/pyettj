@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "pyettj"
-version = "0.3.4"
-description = "Coletar, tratar dados de curvas de juros (ettj) e modelar curvas com nielson-svensson e HJM"
+version = "0.4.0"
+description = "Coletar, tratar dados de curvas de juros (ettj) com dados da B3 e ANBIMA e modelar curvas com nielson-svensson e HJM"
 authors = ["Rafael Rodrigues <rafael.rafarod@gmail.com>"]
 license = "MIT"
 readme = "README.md"
@@ -15,26 +15,13 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.10"
-pandas = [
-    {version = ">=2.2.3", python = ">=3.10"}
-]
+pandas = ">=2.2.3"
 requests = "^2.32.3"
-lxml = "^5.3.0"
-bs4 = "^0.0.2"
 nelson-siegel-svensson = "^0.5.0"
-numpy = [
-    {version = ">=1.26.0", python = ">=3.10"}
-]
-scipy = [
-    {version = ">=1.13.1", python = ">=3.10"}
-]
-bizdays = [
-    {version = ">=1.0.16", python = ">=3.10"}
-]
-matplotlib = [
-    {version = ">=3.10.0", python = ">=3.10"}
-]
-html5lib = "^1.1"
+numpy = ">=1.26.0"
+scipy = ">=1.13.1"
+matplotlib = ">=3.10.0"
+urllib3 = "^2.6.3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.2"
@@ -42,3 +29,19 @@ pytest = "^9.0.2"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.coverage.run]
+branch = true
+source = ["src/pyettj"]
+
+[tool.coverage.report]
+show_missing = true
+ignore_errors = true
+omit = ["tests/*"]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if .debug:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]

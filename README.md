@@ -1,3 +1,5 @@
+# pyettj
+
 <!-- buttons -->
 
 <p align="center">
@@ -19,7 +21,6 @@
     <a href="https://badge.fury.io/py/pyettj">
         <img src="https://badge.fury.io/py/pyettj.svg" alt="PyPI version" height="18">
     </a>
-    
 </p>
 
 <!-- content -->
@@ -27,8 +28,6 @@
 **pyettj** é uma biblioteca Python para capturar dados públicos das curvas de juros, curva a termo ou estrutura a termo da taxa de juros (ETTJ) da B3 (Brasil, Bolsa e Balcão).
 
 ## Instalação
-
-Basta acionar o comando abaixo:
 
 ```sh
 pip install pyettj
@@ -40,135 +39,209 @@ Ou:
 python -m pip install git+https://github.com/rafa-rod/pyettj.git
 ```
 
-
 ## Exemplo de Uso
 
-Para caputar todos os dados disponíveis, basta informar a data:
+### Listar curvas disponíveis
 
 ```python
-import pyettj.ettj as ettj
-data = '18/05/2021'
-ettj_dataframe = ettj.get_ettj(data)
+import pyettj as ettj
+
+ettj.listar_curvas()
 ```
 
-Caso deseje apenas uma curva específica, basta informá-la:
+### Capturar uma curva em uma data
 
 ```python
-import pyettj.ettj as ettj
-data = '18/05/2021'
-ettj_dataframe = ettj.get_ettj(data, curva="PRE")
+import pyettj as ettj
+
+data = '09/04/2026'
+df = ettj.get_ettj(data)
 ```
 
-Se for necessário usar proxy, passe a informação à função:
+O DataFrame retornado tem a seguinte estrutura:
 
-Caso deseje apenas uma curva específica, basta informá-la:
+```
+| refdate    | curva | descricao | dias_corridos | dias_uteis | taxa   | vertice |
+|------------|-------|-----------|---------------|------------|--------|---------|
+| 2026-04-09 | PRE   | DIxPRE    | 1             | 1          | 0.1465 | F       |
+| 2026-04-09 | PRE   | DIxPRE    | 4             | 2          | 0.1464 | M       |
+| ...        | ...   | ...       | ...           | ...        | ...    | ...     |
+```
+
+A taxa está em decimal: `0.1465` = 14,65% a.a.
+
+### Capturar curva específica
 
 ```python
-import pyettj.ettj as ettj
+df = ettj.get_ettj(data, curva="PRE")
+df = ettj.get_ettj(data, curva="DIC")   # DI x IPCA
+df = ettj.get_ettj(data, curva="DCL")   # Cupom Limpo Dólar
+```
+
+### Capturar múltiplas curvas
+
+```python
+df = ettj.get_ettj(data, curva=["PRE", "DIC"])
+```
+
+### Usando proxy (ambiente corporativo)
+
+```python
+import pyettj as ettj
 import getpass
 
-USER = getpass.getuser()
-PWD = getpass.getpass("Senha de rede: ")
+USER  = getpass.getuser()
+PWD   = getpass.getpass("Senha de rede: ")
 PROXY = "servidor"
 PORTA = 4300
 
-proxies = {"http":f'http://{USER}:{PWD}@{PROXY}:{PORTA}',
-           "https":f'https://{USER}:{PWD}@{PROXY}{PORTA}'}
+proxies = {
+    "http":  f"http://{USER}:{PWD}@{PROXY}:{PORTA}",
+    "https": f"http://{USER}:{PWD}@{PROXY}:{PORTA}",
+}
 
-ettj_dataframe = ettj.get_ettj(data, curva="PRE", proxies=proxies)
+df = ettj.get_ettj(data, curva="PRE", proxies=proxies)
 ```
 
-E para plotar o gráfico da curva, invoque a função de plotagem da biblioteca:
+### Plotar a curva
 
 ```python
-curva = "DI x pré 252"
-ettj.plot_ettj(ettj_dataframe, curva, data)
+import pyettj as ettj
+import pyettj.plot_ettj as plot
+
+df = ettj.get_ettj(data, curva="PRE")
+plot.plot_ettj(df)
 ```
 
 <center>
 <img src="https://github.com/rafa-rod/pyettj/blob/main/media/pre.png" style="width:60%;"/>
 </center>
 
-Para coletar várias datas, chame a função `listar_dias_uteis` informando as datas iniciais e finais. Assim, ela retornará somente os dias úteis neste intervalo.
+### Coletar várias datas
+
+Use `listar_dias_uteis` para obter os dias úteis entre duas datas e `get_ettj_historico` para coletar o intervalo completo automaticamente:
 
 ```python
-import pandas as pd
+import pyettj as ettj
 
-de = '13/05/2021'
-ate ='18/05/2021'
-datas = ettj.listar_dias_uteis(de, ate)
+# Listar dias úteis do intervalo
+datas = ettj.listar_dias_uteis("01/04/2026", "09/04/2026")
 
-todas_datas = pd.DataFrame()
-for dat in datas:
-    ano, mes, dia = dat.split("-")
-    data = "/".join([dia, mes, ano])
-    dados = ettj.get_ettj(data)
-    todas_datas=pd.concat([dados, todas_datas])
+# Coletar todas as datas de uma vez (com cache automático)
+df_historico = ettj.get_ettj_historico(
+    "01/04/2026", "09/04/2026",
+    curva="PRE",
+    proxies=proxies,
+)
+
+# Identificar as datas retornadas
+df_historico["refdate"].unique()
 ```
 
-A variável `todas_datas` possuirá todas as curvas em cada data do intervalo. Para identificar as datas, basta o comando:
+## Cache local
+
+Por padrão, o pyettj salva os dados em cache local (`~/.pyettj/cache/`) para evitar downloads repetidos. Isso é especialmente útil para séries históricas longas.
 
 ```python
-todas_datas.Data.unique().tolist()
+# Cache habilitado por padrão
+df = ettj.get_ettj(data, proxies=proxies)
+
+# Desabilitar cache
+df = ettj.get_ettj(data, proxies=proxies, cache=False)
+
+# Ver informações do cache
+ettj.cache_info()
+
+# Limpar cache
+ettj.cache_clear()                       # tudo
+ettj.cache_clear(antes_de="01/01/2026")  # só dados antigos
 ```
 
-Você pode obter dados os dados da ANBIMA - Estrutura a Termo das Taxas de Juros Estimada disponível em: https://www.anbima.com.br/informacoes/est-termo/CZ.asp
+O diretório padrão pode ser alterado via variável de ambiente:
 
-```python
-import pyettj.modelo_ettj as modelo_ettj
-
-parametros_curva, ettj, taxa, erros = modelo_ettj.get_ettj_anbima("15/09/2022")
+```sh
+export PYETTJ_CACHE_DIR=/caminho/desejado
 ```
 
-A partir dos parâmetros estimados pela ANBIMA, você pode obter usar a equação de Svensson:
+## Tratamento de Exceções
 
 ```python
-curva = parametros_curva.loc["PREFIXADOS", :].str.replace(",",".").astype(float)
+from pyettj import HolidayError, NoDataError, CurvaInvalidaError, PyETTJError
+
+try:
+    df = ettj.get_ettj("11/04/2026", proxies=proxies)  # sábado
+except HolidayError as e:
+    print(f"Feriado: {e}. Sugestão: {e.sugestao}")
+
+try:
+    df = ettj.get_ettj(data, curva="XYZ", proxies=proxies)
+except CurvaInvalidaError as e:
+    print(f"Curva inválida: {e.curva}")
+
+try:
+    df = ettj.get_ettj(data, proxies=proxies)
+except PyETTJError as e:
+    print(f"Erro: {e}")
+```
+
+## ANBIMA — Estrutura a Termo das Taxas de Juros Estimada
+
+Você pode obter os dados da ANBIMA disponíveis em: https://www.anbima.com.br/informacoes/est-termo/CZ.asp
+
+```python
+import pyettj as ettj
+
+parametros_curva, ettj_df, taxa, erros = ettj.get_ettj_anbima("15/09/2022")
+```
+
+A partir dos parâmetros estimados pela ANBIMA, você pode usar a equação de Svensson:
+
+```python
+curva = parametros_curva.loc["PREFIXADOS", :].str.replace(",", ".").astype(float)
 
 beta1, beta2, beta3, beta4 = curva[:4]
 lambda1, lambda2 = curva[4:]
-t = 21/252 #em anos
+t = 21/252  # em anos
 
-taxa = modelo_ettj.svensson(beta1, beta2, beta3, beta4, lambda1, lambda2, t)
+taxa = ettj.svensson(beta1, beta2, beta3, beta4, lambda1, lambda2, t)
 print(taxa)
 ```
 
 Para coletar as taxas em diversas maturidades:
 
 ```python
-maturidades = [1,21,42,63,126,252,504,1008,1260,1890,2520]
+maturidades = [1, 21, 42, 63, 126, 252, 504, 1008, 1260, 1890, 2520]
 taxas = []
 
 for x in maturidades:
-    taxa = modelo_ettj.svensson(beta1, beta2, beta3, beta4, lambda1, lambda2, x/252)
+    taxa = ettj.svensson(beta1, beta2, beta3, beta4, lambda1, lambda2, x/252)
     taxas.append(taxa)
 
-pd.DataFrame(np.array([taxas]), columns=[x/252 for x in maturidades]).T.multiply(100).plot()
+pd.DataFrame(taxas, index=[x/252 for x in maturidades]).multiply(100).plot()
 ```
 
-Caso você não possua os parâmetros da curva Svensson, pode-se estimá-los conforme script a seguir:
+Caso você não possua os parâmetros da curva Svensson, pode-se estimá-los:
 
 ```python
 import matplotlib.pyplot as plt
+import pyettj as ettj
 
 data = '20/03/2023'
-ettj_dataframe = ettj.get_ettj(data, curva="PRE")
+df = ettj.get_ettj(data, curva="PRE")
 
-t = ettj_dataframe[ettj_dataframe.columns[0]].divide(252).values
-y = ettj_dataframe[ettj_dataframe.columns[1]].divide(100).values
+# t em anos, y em decimal
+t = df["dias_corridos"].divide(252).values
+y = df["taxa"].values
 
-beta1, beta2, beta3, beta4, lambda1, lambda2 = modelo_ettj.calibrar_curva_svensson(t, y)
+beta1, beta2, beta3, beta4, lambda1, lambda2 = ettj.calibrar_curva_svensson(t, y)
 
-maturidades = [1,21,42,63,126,252,504,1008,1260,1890,2520]
-taxas = []
+maturidades = [1, 21, 42, 63, 126, 252, 504, 1008, 1260, 1890, 2520]
+taxas = [ettj.svensson(beta1, beta2, beta3, beta4, lambda1, lambda2, x/252)
+         for x in maturidades]
 
-for x in maturidades:
-    taxa = modelo_ettj.svensson(beta1, beta2, beta3, beta4, lambda1, lambda2, x/252)
-    taxas.append(taxa)
+ettj_pre = pd.DataFrame(taxas, index=[x/252 for x in maturidades]).multiply(100)
 
-ettj_pre = pd.DataFrame(np.array([taxas]), columns=[x/252 for x in maturidades]).T.multiply(100)
-
-plt.figure(figsize=(10,5))
+plt.figure(figsize=(10, 5))
 plt.plot(ettj_pre)
 plt.title("ETTJ PREFIXADA")
 plt.show()
@@ -207,85 +280,95 @@ O uso de três fatores é suficiente para descrever mais de 95% da variação da
 Contudo, conforme minhas experiências, o uso de 3 fatores depende dos dados de calibração e forma de otimização. Aqui o algoritmo já possui ajustes de otimização para facilitar encontrar resposta ótima mais adequada, mas qualquer método que use PCA (análise de componentes principais) depende fortemente da qualidade dos dados (_missing values_ e _outliers_ influenciam muito).
 
 Mais detalhes podem ser vistos no referido artigo, vamos para um exemplo de implementação.
-O dataframe `dados_historicos_taxas` contem dados históricos obtidos usando `ettj.get_ettj(data)`
 
 ```python
+import pyettj as ettj
 import pyettj.HJM as HJM
-import pyettj.ettj as ettj
 import pandas as pd
 import numpy as np
 
 import seaborn as sns; sns.set_style("white")
 import matplotlib.pyplot as plt
 
-#1. Coleta dos Dados:
-de = '13/05/2019'
-ate ='18/02/2026'
-datas = ettj.listar_dias_uteis(de, ate)
+# 1. Coleta dos Dados
+de  = '13/05/2019'
+ate = '09/04/2026'
 
-def obter_dados_e_preparar_dataframe(datas, curva = 'DI x pré 252', vertices = None) -> pd.DataFrame:
-    dados_historicos_taxas = pd.DataFrame()
-    for dat in tqdm(datas):
-        ano, mes, dia = dat.split("-")
-        data = "/".join([dia, mes, ano])
-        dados = ettj.get_ettj(data)
-        dados_historicos_taxas = pd.concat([dados, dados_historicos_taxas])
-    taxa_pre = dados_historicos_taxas[['Data', 'Dias Corridos', curva]].set_index('Data')
-    taxa_pre.columns = ["Dias", curva]
-    taxa_pre['colunas'] = taxa_pre["Dias"]
-
-    taxa_pre = taxa_pre.pivot_table(values=curva, columns="colunas", index=taxa_pre.index)
-    colunas_ordenadas = sorted(taxa_pre.columns)
-    taxa_pre = taxa_pre[colunas_ordenadas]
-
-    if vertices:
-        taxa_pre = taxa_pre[[col for col in taxa_pre.columns if col in vertices]]
-        return taxa_pre
-    else:
-        return taxa_pre.dropna(axis=1)
-
-taxa_pre = obter_dados_e_preparar_dataframe(datas, curva = 'DI x pré 252')
+df_historico = ettj.get_ettj_historico(
+    de, ate,
+    curva="PRE",
+    proxies=proxies,   # omitir se não usar proxy
+)
 ```
 
-O exemplo de saida para esse dataframe é:
-
-```
-| Data       |      210 |      420 |      630 |      840 |      1050 |      2520 |
-|------------|----------|----------|----------|----------|-----------|-----------|
-| 13/05/2019 |     6.41 |     6.56 |     6.99 |     7.38 |      7.73 |      8.81 |
-| 14/05/2019 |     6.4  |     6.51 |     6.92 |     7.32 |      7.63 |      8.77 |
-| 15/05/2019 |     6.4  |     6.52 |     6.92 |     7.32 |      7.65 |      8.82 |
-| 16/05/2019 |     6.43 |     6.59 |     7.01 |     7.43 |      7.75 |      8.93 |
-| 17/05/2019 |     6.46 |     6.7  |     7.14 |     7.57 |      7.9  |      9.13 |
-```
-
-No índice estão as datas de coleta das taxas da curva e o nome das colunas são renomeadas seguida dos seus respectivos vértices, em dias. Importante ressaltar que haverá bastante dados faltantes (_missing values_), cabe ao usuário selecionar as melhores colunas e interpolar, se for preciso.
+O DataFrame retornado por `get_ettj_historico` tem estrutura longa. Para o HJM precisamos de uma tabela pivô onde o índice são as datas e as colunas os vértices em dias corridos:
 
 ```python
-#2 - Analisar os dados:
-# Recomendo fortemente verificar dados faltantes e valores *estranhos*
-# Use ferramentas gráficas para ajudar como:
+def preparar_dataframe_hjm(df: pd.DataFrame, vertices=None) -> pd.DataFrame:
+    """
+    Converte o DataFrame longo do get_ettj_historico para o formato
+    wide exigido pelo ModeloHJM:
+        índice  → datas (refdate)
+        colunas → dias corridos (vértices)
+        valores → taxa em percentual (taxa * 100)
+    """
+    taxa_wide = df.pivot_table(
+        values="taxa",
+        index="refdate",
+        columns="dias_corridos",
+        aggfunc="first",
+    ) * 100  # decimal → percentual
+
+    taxa_wide.columns.name = None
+    taxa_wide = taxa_wide[sorted(taxa_wide.columns)]
+
+    if vertices:
+        colunas = [c for c in taxa_wide.columns if c in vertices]
+        return taxa_wide[colunas]
+
+    return taxa_wide.dropna(axis=1)
+
+taxa_pre = preparar_dataframe_hjm(df_historico)
+```
+
+O resultado tem a seguinte estrutura:
+
+```
+| refdate    |   210 |   420 |   630 |   840 |  1050 |  2520 |
+|------------|-------|-------|-------|-------|-------|-------|
+| 13/05/2019 |  6.41 |  6.56 |  6.99 |  7.38 |  7.73 |  8.81 |
+| 14/05/2019 |  6.40 |  6.51 |  6.92 |  7.32 |  7.63 |  8.77 |
+| 15/05/2019 |  6.40 |  6.52 |  6.92 |  7.32 |  7.65 |  8.82 |
+| 16/05/2019 |  6.43 |  6.59 |  7.01 |  7.43 |  7.75 |  8.93 |
+| 17/05/2019 |  6.46 |  6.70 |  7.14 |  7.57 |  7.90 |  9.13 |
+```
+
+No índice estão as datas de coleta das taxas da curva e as colunas são os vértices em dias corridos. Importante ressaltar que haverá dados faltantes (_missing values_) para vértices com menos liquidez — cabe ao usuário selecionar as melhores colunas e interpolar, se necessário.
+
+```python
+# 2. Analisar os dados
+# Recomendo fortemente verificar dados faltantes e valores estranhos.
+# Use ferramentas gráficas para ajudar:
 HP = 10
 choques_historicos_pre = taxa_pre.diff(HP).dropna()
 
-sns.distplot(choques_historicos_pre["210"])
+sns.histplot(choques_historicos_pre[210])
+sns.boxplot(data=choques_historicos_pre[210])
 
-sns.boxplot(data=choques_historicos_pre["210"])
-
-#Veja também os choques históricos. Isso ajuda para construir cenários e saber o nível dos choques:
-
+# Veja também os choques históricos.
+# Isso ajuda para construir cenários e saber o nível dos choques:
 pontos_base_estresses_historicos_pre = pd.concat([
-                                        choques_historicos_pre.quantile(0.99, interpolation="nearest"),
-                                        choques_historicos_pre.quantile(1-0.99, interpolation="nearest")],
-                                                 axis=1)*10_000 #em bps
+    choques_historicos_pre.quantile(0.99, interpolation="nearest"),
+    choques_historicos_pre.quantile(1-0.99, interpolation="nearest"),
+], axis=1) * 10_000  # em bps
 pontos_base_estresses_historicos_pre.columns = ["Choques Positivos", "Choques Negativos"]
 pontos_base_estresses_historicos_pre
 
 
-#3. Modelo HJM:
+# 3. Modelo HJM
 modelo = HJM.ModeloHJM(convencao_dias=252, verbose=1)
 
-#sempre usar dias uteis conforme dados oriundos do pyettj acima
+# Sempre usar dias corridos conforme dados oriundos do pyettj
 vertices_calibracao = [420, 840, 1050, 2520]
 
 modelo.calibrar(taxa_pre, vertices_calibracao)
@@ -297,44 +380,47 @@ data_choque = "2026-01-02"
 resultado_pos = modelo.aplicar_choques(
     data_choque=data_choque,
     vertices_choques_dias=[21, 504, 252*10],
-    choques_observados = np.array([-100, 0, 255])/10_000, #choque dos especialistas em bps
+    choques_observados=np.array([-100, 0, 255]) / 10_000,  # em bps → decimal
     hp_dias=10,
-    retornar_detalhes=True
+    retornar_detalhes=True,
 )
 
 resultado_neg = modelo.aplicar_choques(
     data_choque=data_choque,
     vertices_choques_dias=[21, 504, 252*10],
-    choques_observados = np.array([100, 0, -200])/10_000, #choque dos especialistas em bps
+    choques_observados=np.array([100, 0, -200]) / 10_000,  # em bps → decimal
     hp_dias=10,
-    retornar_detalhes=True
+    retornar_detalhes=True,
 )
 
-#caso precise salvar o modelo:
+# Caso precise salvar o modelo:
 caminho_modelo = "modelo_hjm_calibrado.json"
 modelo.salvar(caminho_modelo)
 
-#carregar o modelo que foi salvo:
-modelo_carregado = ModeloHJM.carregar(caminho_modelo, verbose=1)
+# Carregar o modelo salvo:
+modelo_carregado = ettj.ModeloHJM.carregar(caminho_modelo, verbose=1)
 ```
 
 Para visualizar os choques, use:
 
 ```python
-resultado = resultado_neg['curva'][resultado_neg['curva'].columns[1:]]
+resultado = resultado_neg["curva"][resultado_neg["curva"].columns[1:]]
 resultado.columns = ["Curva Original", "Curva Choque Negativo"]
-resultado = pd.concat([resultado, resultado_pos['curva'][resultado_pos['curva'].columns[2:]] ], axis=1).multiply(100)
+resultado = pd.concat(
+    [resultado, resultado_pos["curva"][resultado_pos["curva"].columns[2:]]],
+    axis=1,
+).multiply(100)
 resultado.columns = ["Curva Original", "Curva Choque Positivo", "Curva Choque Negativo"]
 
-plt.figure(figsize=(10,6))
-plt.plot(resultado[["Curva Original"]], 'k--')
-plt.plot(resultado[["Curva Choque Positivo"]], 'b')
-plt.plot(resultado[["Curva Choque Negativo"]], 'r')
-plt.xlabel('Vertice em anos')
-plt.ylabel('% aa\n', loc="top", rotation=0, labelpad=-20)
-locs, vals = plt.yticks()
-plt.yticks(locs, np.round(locs,1))
-plt.suptitle(f'Choques Paralelos na Curva Prefixada em {data_choque}')
+plt.figure(figsize=(10, 6))
+plt.plot(resultado[["Curva Original"]], "k--")
+plt.plot(resultado[["Curva Choque Positivo"]], "b")
+plt.plot(resultado[["Curva Choque Negativo"]], "r")
+plt.xlabel("Vértice em anos")
+plt.ylabel("% aa", loc="top", rotation=0, labelpad=-20)
+locs, _ = plt.yticks()
+plt.yticks(locs, np.round(locs, 1))
+plt.suptitle(f"Choques Paralelos na Curva Prefixada em {data_choque}")
 plt.legend(resultado.columns)
 plt.box(False)
 plt.grid(axis="y")
@@ -360,6 +446,6 @@ print(resumo)
 
 print(f"Número de componentes: {modelo.num_componentes}")
 
-# Vértices usados na calibração (em dias)
+# Vértices usados na calibração (em dias corridos)
 print(f"Vértices: {modelo.vertices_dias}")
 ```
