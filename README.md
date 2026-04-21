@@ -157,10 +157,12 @@ ettj.cache_clear()                       # tudo
 ettj.cache_clear(antes_de="01/01/2026")  # só dados antigos
 ```
 
-O diretório padrão pode ser alterado via variável de ambiente:
+O diretório padrão pode ser alterado via Python:
 
-```sh
-export PYETTJ_CACHE_DIR=/caminho/desejado
+```python
+# Definir uma vez por sessão — todas as chamadas subsequentes usam este diretório
+ettj.set_cache_dir(r"C:\dados\mercado\pyettj")   # Windows
+ettj.set_cache_dir("/dados/mercado/pyettj")          # Linux/Mac
 ```
 
 ## Tratamento de Exceções

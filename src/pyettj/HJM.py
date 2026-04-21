@@ -217,7 +217,7 @@ class ModeloHJM:
         self.pca: Optional[pd.DataFrame] = None
         self.vertices_dias: Optional[List[int]] = None
         self.vertices_ano: Optional[np.ndarray] = None
-        self.taxas: Optional[pd.DataFrame] = None
+        self._taxas: Optional[pd.DataFrame] = None
         self.num_componentes: Optional[int] = None
         self.sigma_funcional: Optional[np.ndarray] = None
         self.mu_funcional: Optional[np.ndarray] = None
@@ -235,6 +235,22 @@ class ModeloHJM:
         """Método de logging interno"""
         if self.verbose >= nivel:
             print(f"[HJM] {mensagem}")
+
+    @property
+    def taxas(self) -> Optional[pd.DataFrame]:
+        return self._taxas
+
+    @taxas.setter
+    def taxas(self, df: Optional[pd.DataFrame]) -> None:
+        if df is None:
+            self._taxas = None
+            return
+        taxas = df.copy()
+        if pd.api.types.is_integer_dtype(taxas.columns):
+            taxas.columns = self._padronizar_colunas(
+                taxas.columns, self.convencao_dias
+            )
+        self._taxas = taxas
 
     @staticmethod
     def _dias_para_anos(
@@ -423,10 +439,7 @@ class ModeloHJM:
         self._log(f"Vértices (dias): {self.vertices_dias}", nivel=2)
         self._log(f"Vértices (anos): {self.vertices_ano}", nivel=2)
 
-        colunas_df = self._padronizar_colunas(self.taxas.columns, self.convencao_dias)
-        self.taxas.columns = colunas_df
-        colunas_existentes = [v for v in self.vertices_ano if v in colunas_df]
-        print(f"colunas_df {colunas_df}")
+        colunas_existentes = [v for v in self.vertices_ano if v in self.taxas.columns]
         print(f"colunas_existentes {colunas_existentes}")
 
         if len(colunas_existentes) == 0:

@@ -19,7 +19,7 @@ from .HJM import ModeloHJM, ParametrosOtimizacao, ResultadoCalibracao
 from .plot_ettj import plot_ettj
 
 # Cache
-from .cache import cache_info, cache_clear
+from .cache import cache_info, cache_clear, set_cache_dir
 
 # Exceções — expostas para quem quiser fazer tratamento granular
 from .exceptions import (
@@ -57,6 +57,7 @@ __all__ = [
     # Cache
     "cache_info",
     "cache_clear",
+    "set_cache_dir",
     # Modelos
     "svensson",
     "calibrar_curva_svensson",

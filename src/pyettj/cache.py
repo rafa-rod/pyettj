@@ -7,18 +7,18 @@ O cache salva o TaxaSwap completo (todas as curvas) em CSV por data,
 evitando downloads repetidos de séries históricas.
 
 Estrutura em disco:
-    {PYETTJ_CACHE_DIR}/TS/
+    {cache_dir}/TS/
         2026-04-09.csv
         2026-04-08.csv
         ...
 
-Configuração:
-    - Diretório padrão : ~/.pyettj/cache/TS/
-    - Variável de ambiente PYETTJ_CACHE_DIR sobrescreve o padrão
-      ex: PYETTJ_CACHE_DIR=/dados/mercado/pyettj
+Configuração (ordem de prioridade):
+    1. set_cache_dir(path)       → define para a sessão atual via Python
+    2. PYETTJ_CACHE_DIR          → variável de ambiente
+    3. ~/.pyettj/cache/          → padrão
 
 Política de TTL:
-    - Data de hoje           → nunca usa cache (sempre baixa fresco)
+    - Data de hoje            → nunca usa cache (sempre baixa fresco)
     - Dado recente (≤ 5 dias) → cache válido por 4 horas
     - Dado antigo (> 5 dias)  → cache permanente (dado imutável)
 """
@@ -27,9 +27,9 @@ from __future__ import annotations
 
 import os
 import warnings
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import pandas as pd
 
@@ -40,14 +40,48 @@ from pyettj.exceptions import CacheError
 # Diretório de cache
 # ---------------------------------------------------------------------------
 
+# Variável de módulo — sobrescrita por set_cache_dir()
+_CACHE_DIR_OVERRIDE: Optional[str] = None
+
+
+def set_cache_dir(path: Union[str, Path]) -> None:
+    """
+    Define o diretório de cache para a sessão Python atual.
+
+    Tem prioridade sobre a variável de ambiente PYETTJ_CACHE_DIR
+    e sobre o diretório padrão (~/.pyettj/cache/).
+
+    Parâmetros
+    ----------
+    path : str ou Path
+        Caminho do diretório desejado. O subdiretório 'TS/' será
+        criado automaticamente dentro dele.
+
+    Exemplos
+    --------
+    >>> import pyettj as ettj
+    >>> ettj.set_cache_dir(r"C:\\dados\\mercado\\pyettj")
+    >>> ettj.set_cache_dir("/dados/mercado/pyettj")
+    >>> ettj.set_cache_dir(Path.home() / "meus_dados" / "b3")
+    """
+    global _CACHE_DIR_OVERRIDE
+    _CACHE_DIR_OVERRIDE = str(path)
+    print(f"[pyettj] Cache dir definido: {Path(path) / 'TS'}")
+
+
 def _cache_dir() -> Path:
-    """Retorna o diretório de cache, respeitando PYETTJ_CACHE_DIR."""
+    """
+    Retorna o diretório de cache ativo, respeitando a ordem de prioridade:
+    1. set_cache_dir() chamado na sessão
+    2. Variável de ambiente PYETTJ_CACHE_DIR
+    3. Padrão: ~/.pyettj/cache/TS/
+    """
+    if _CACHE_DIR_OVERRIDE:
+        return Path(_CACHE_DIR_OVERRIDE) / "TS"
     custom = os.environ.get("PYETTJ_CACHE_DIR")
     if custom:
-        base = Path(custom)
-    else:
-        base = Path.home() / ".pyettj" / "cache"
-    return base / "TS"
+        return Path(custom) / "TS"
+    return Path.home() / ".pyettj" / "cache" / "TS"
 
 
 def _cache_path(d: date) -> Path:
@@ -159,7 +193,6 @@ def cache_info() -> None:
     total_bytes = sum(f.stat().st_size for f in arquivos)
     total_mb    = total_bytes / 1_048_576
 
-    # Datas a partir dos nomes de arquivo
     datas = []
     for f in arquivos:
         try:
@@ -195,7 +228,6 @@ def cache_clear(antes_de: Optional[str] = None) -> None:
         print("[pyettj] Cache já está vazio.")
         return
 
-    # Determinar data limite
     limite: Optional[date] = None
     if antes_de is not None:
         for fmt in ("%d/%m/%Y", "%Y-%m-%d"):

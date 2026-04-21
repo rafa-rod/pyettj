@@ -19,12 +19,12 @@ Nota: testes que fazem requests reais à B3 são marcados com @pytest.mark.netwo
 e podem ser excluídos em CI sem rede: pytest -m "not network"
 """
 
-import io
 import sys
-import zipfile
 from datetime import date, timedelta
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
+import io
+import zipfile
 
 import pandas as pd
 import pytest
@@ -32,7 +32,6 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import pyettj as ettj
-from pyettj.cache import _cache_ler, _cache_path, _cache_salvar, _cache_valido
 from pyettj.exceptions import (
     CurvaInvalidaError,
     DataFormatoError,
@@ -40,11 +39,12 @@ from pyettj.exceptions import (
     NoDataError,
     PyETTJError,
 )
+from pyettj.cache import _cache_dir, _cache_path, _cache_valido, _cache_ler, _cache_salvar
+
 
 # ---------------------------------------------------------------------------
 # Helpers para testes sem rede
 # ---------------------------------------------------------------------------
-
 
 def _criar_zip_taxaswap(linhas: list[str]) -> bytes:
     """
@@ -75,7 +75,7 @@ def _linha_taxaswap(
     desc: str = "DIxPRE         ",
     dc: int = 252,
     du: int = 174,
-    taxa_int: int = 146500000,  # 0.1465 = 14.65%
+    taxa_int: int = 146500000,   # 0.1465 = 14.65%
     vertice: str = "F",
     cod_vertice: int = 252,
 ) -> str:
@@ -83,42 +83,37 @@ def _linha_taxaswap(
     sinal = "+" if taxa_int >= 0 else "-"
     taxa_str = str(abs(taxa_int)).zfill(14)
     return (
-        f"{seq:06d}"  # [00:06]  seq
-        f"00101"  # [06:11]  constante
-        f"{data}"  # [11:19]  data AAAAMMDD
-        f"T1"  # [19:21]  constante
-        f"{cod}"  # [21:26]  código da taxa (5 chars)
-        f"{desc}"  # [26:41]  descrição (15 chars)
-        f"{dc:05d}"  # [41:46]  dias corridos
-        f"{du:05d}"  # [46:51]  dias úteis
-        f"{sinal}"  # [51]     sinal
-        f"{taxa_str}"  # [52:66]  taxa (14 dígitos)
-        f"{vertice}"  # [66]     vértice F/M
+        f"{seq:06d}"        # [00:06]  seq
+        f"00101"            # [06:11]  constante
+        f"{data}"           # [11:19]  data AAAAMMDD
+        f"T1"               # [19:21]  constante
+        f"{cod}"            # [21:26]  código da taxa (5 chars)
+        f"{desc}"           # [26:41]  descrição (15 chars)
+        f"{dc:05d}"         # [41:46]  dias corridos
+        f"{du:05d}"         # [46:51]  dias úteis
+        f"{sinal}"          # [51]     sinal
+        f"{taxa_str}"       # [52:66]  taxa (14 dígitos)
+        f"{vertice}"        # [66]     vértice F/M
         f"{cod_vertice:05d}"  # [67:72]  código vértice
     )
 
 
 def _df_esperado_pre() -> pd.DataFrame:
     """DataFrame mínimo esperado para curva PRE."""
-    return pd.DataFrame(
-        [
-            {
-                "refdate": pd.Timestamp("2026-04-09"),
-                "curva": "PRE",
-                "descricao": "DIxPRE",
-                "dias_corridos": 252,
-                "dias_uteis": 174,
-                "taxa": 0.1465,
-                "vertice": "F",
-            }
-        ]
-    )
+    return pd.DataFrame([{
+        "refdate":       pd.Timestamp("2026-04-09"),
+        "curva":         "PRE",
+        "descricao":     "DIxPRE",
+        "dias_corridos": 252,
+        "dias_uteis":    174,
+        "taxa":          0.1465,
+        "vertice":       "F",
+    }])
 
 
 # ---------------------------------------------------------------------------
 # Fixture: DataFrame de taxas simulado para get_ettj (mock)
 # ---------------------------------------------------------------------------
-
 
 @pytest.fixture
 def df_pre_simples():
@@ -133,15 +128,9 @@ def df_pre_simples():
 @pytest.fixture
 def df_multi_curvas():
     linhas = [
-        _linha_taxaswap(
-            seq=1, cod="PRE  ", desc="DIxPRE         ", dc=252, taxa_int=146500000
-        ),
-        _linha_taxaswap(
-            seq=2, cod="DIC  ", desc="DI X IPCA      ", dc=252, taxa_int=60000000
-        ),
-        _linha_taxaswap(
-            seq=3, cod="DCL  ", desc="CUPOM LIMPO - S", dc=252, taxa_int=50000000
-        ),
+        _linha_taxaswap(seq=1, cod="PRE  ", desc="DIxPRE         ", dc=252, taxa_int=146500000),
+        _linha_taxaswap(seq=2, cod="DIC  ", desc="DI X IPCA      ", dc=252, taxa_int=60000000),
+        _linha_taxaswap(seq=3, cod="DCL  ", desc="CUPOM LIMPO - S", dc=252, taxa_int=50000000),
     ]
     return _criar_zip_taxaswap(linhas)
 
@@ -150,35 +139,30 @@ def df_multi_curvas():
 # 1. PARSING DE DATA
 # ===========================================================================
 
-
 class TestParseData:
+
     def test_formato_dd_mm_yyyy(self):
         from pyettj.ettj import _parse_data
-
         d = _parse_data("09/04/2026")
         assert d == date(2026, 4, 9)
 
     def test_formato_yyyy_mm_dd(self):
         from pyettj.ettj import _parse_data
-
         d = _parse_data("2026-04-09")
         assert d == date(2026, 4, 9)
 
     def test_formato_dd_mm_yyyy_hifem(self):
         from pyettj.ettj import _parse_data
-
         d = _parse_data("09-04-2026")
         assert d == date(2026, 4, 9)
 
     def test_formato_invalido_lanca_excecao(self):
         from pyettj.ettj import _parse_data
-
         with pytest.raises(DataFormatoError):
             _parse_data("2026/04/09")
 
     def test_nao_string_lanca_excecao(self):
         from pyettj.ettj import _parse_data
-
         with pytest.raises((DataFormatoError, AttributeError)):
             _parse_data(20260409)
 
@@ -187,8 +171,8 @@ class TestParseData:
 # 2. LISTAR_CURVAS
 # ===========================================================================
 
-
 class TestListarCurvas:
+
     def test_retorna_dataframe(self, capsys):
         df = ettj.listar_curvas(verbose=False)
         assert isinstance(df, pd.DataFrame)
@@ -220,8 +204,8 @@ class TestListarCurvas:
 # 3. LISTAR_DIAS_UTEIS
 # ===========================================================================
 
-
 class TestListarDiasUteis:
+
     def test_retorna_lista(self):
         dias = ettj.listar_dias_uteis("01/04/2026", "09/04/2026")
         assert isinstance(dias, list)
@@ -229,8 +213,8 @@ class TestListarDiasUteis:
     def test_exclui_fins_de_semana(self):
         # 04/04 (sáb) e 05/04 (dom) não devem aparecer
         dias = ettj.listar_dias_uteis("03/04/2026", "07/04/2026")
-        assert "05/04/2026" not in dias  # sábado
-        assert "06/04/2026" not in dias  # domingo
+        assert "04/04/2026" not in dias  # sábado
+        assert "05/04/2026" not in dias  # domingo
 
     def test_inclui_dias_uteis(self):
         dias = ettj.listar_dias_uteis("07/04/2026", "09/04/2026")
@@ -260,8 +244,8 @@ class TestListarDiasUteis:
 # 4. GET_ETTJ — validações sem rede (mock)
 # ===========================================================================
 
-
 class TestGetEttjMock:
+
     def test_fim_de_semana_lanca_holiday_error(self):
         # 11/04/2026 é sábado
         with pytest.raises(HolidayError) as exc:
@@ -287,13 +271,8 @@ class TestGetEttjMock:
         mock_baixar.return_value = df_pre_simples
         df = ettj.get_ettj("09/04/2026", curva="PRE", cache=False)
         assert list(df.columns) == [
-            "refdate",
-            "curva",
-            "descricao",
-            "dias_corridos",
-            "dias_uteis",
-            "taxa",
-            "vertice",
+            "refdate", "curva", "descricao",
+            "dias_corridos", "dias_uteis", "taxa", "vertice",
         ]
 
     @patch("pyettj.ettj._baixar_raw")
@@ -373,8 +352,8 @@ class TestGetEttjMock:
 # 5. CACHE
 # ===========================================================================
 
-
 class TestCache:
+
     def test_salvar_e_ler(self, tmp_path, monkeypatch):
         monkeypatch.setenv("PYETTJ_CACHE_DIR", str(tmp_path))
         d = date(2026, 1, 15)
@@ -398,7 +377,7 @@ class TestCache:
 
     def test_cache_dado_antigo_valido(self, tmp_path, monkeypatch):
         monkeypatch.setenv("PYETTJ_CACHE_DIR", str(tmp_path))
-        d = date(2026, 1, 2)  # mais de 5 dias atrás
+        d = date(2026, 1, 2)   # mais de 5 dias atrás
         df = _df_esperado_pre()
         _cache_salvar(d, df)
         assert _cache_valido(d) is True
@@ -438,9 +417,7 @@ class TestCache:
         assert "1" in out
 
     @patch("pyettj.ettj._baixar_raw")
-    def test_get_ettj_salva_no_cache(
-        self, mock_baixar, df_pre_simples, tmp_path, monkeypatch
-    ):
+    def test_get_ettj_salva_no_cache(self, mock_baixar, df_pre_simples, tmp_path, monkeypatch):
         monkeypatch.setenv("PYETTJ_CACHE_DIR", str(tmp_path))
         mock_baixar.return_value = df_pre_simples
         ettj.get_ettj("09/04/2026", curva="PRE", cache=True)
@@ -459,27 +436,40 @@ class TestCache:
         assert mock_baixar.call_count == 1
 
 
+
+    def test_set_cache_dir(self, tmp_path, capsys):
+        outro_dir = tmp_path / "outro_cache"
+        ettj.set_cache_dir(str(outro_dir))
+        out = capsys.readouterr().out
+        assert "outro_cache" in out
+
+        # Cache deve usar o novo diretório
+        df = _df_esperado_pre()
+        _cache_salvar(date(2026, 1, 2), df)
+        assert (outro_dir / "TS" / "2026-01-02.csv").exists()
+
+        # Restaurar padrão para não afetar outros testes
+        import pyettj.cache as _cache_mod
+        _cache_mod._CACHE_DIR_OVERRIDE = None
+
+
 # ===========================================================================
 # 6. GET_ETTJ_HISTORICO — mock
 # ===========================================================================
 
-
 class TestGetEttjHistoricoMock:
+
     @patch("pyettj.ettj._baixar_raw")
     def test_retorna_dataframe(self, mock_baixar, df_pre_simples):
         mock_baixar.return_value = df_pre_simples
-        df = ettj.get_ettj_historico(
-            "07/04/2026", "09/04/2026", curva="PRE", cache=False
-        )
+        df = ettj.get_ettj_historico("07/04/2026", "09/04/2026", curva="PRE", cache=False)
         assert isinstance(df, pd.DataFrame)
         assert not df.empty
 
     @patch("pyettj.ettj._baixar_raw")
     def test_tres_dias_uteis(self, mock_baixar, df_pre_simples):
         mock_baixar.return_value = df_pre_simples
-        df = ettj.get_ettj_historico(
-            "07/04/2026", "09/04/2026", curva="PRE", cache=False
-        )
+        df = ettj.get_ettj_historico("07/04/2026", "09/04/2026", curva="PRE", cache=False)
         datas = df["refdate"].dt.date.unique()
         assert len(datas) == 3
 
@@ -487,9 +477,7 @@ class TestGetEttjHistoricoMock:
     def test_pula_fins_de_semana(self, mock_baixar, df_pre_simples):
         mock_baixar.return_value = df_pre_simples
         # 04/04 (sáb) e 05/04 (dom) devem ser pulados
-        df = ettj.get_ettj_historico(
-            "03/04/2026", "07/04/2026", curva="PRE", cache=False
-        )
+        df = ettj.get_ettj_historico("03/04/2026", "07/04/2026", curva="PRE", cache=False)
         datas = [d.strftime("%d/%m/%Y") for d in df["refdate"].dt.date.unique()]
         assert "04/04/2026" not in datas
         assert "05/04/2026" not in datas
@@ -497,9 +485,7 @@ class TestGetEttjHistoricoMock:
     @patch("pyettj.ettj._baixar_raw")
     def test_data_ini_posterior_lanca_excecao(self, mock_baixar, df_pre_simples):
         with pytest.raises(PyETTJError):
-            ettj.get_ettj_historico(
-                "09/04/2026", "01/04/2026", curva="PRE", cache=False
-            )
+            ettj.get_ettj_historico("09/04/2026", "01/04/2026", curva="PRE", cache=False)
 
     @patch("pyettj.ettj._baixar_raw")
     def test_ignorar_erros_true(self, mock_baixar, df_pre_simples):
@@ -511,11 +497,8 @@ class TestGetEttjHistoricoMock:
 
         mock_baixar.side_effect = side_effect
         df = ettj.get_ettj_historico(
-            "07/04/2026",
-            "09/04/2026",
-            curva="PRE",
-            cache=False,
-            ignorar_erros=True,
+            "07/04/2026", "09/04/2026", curva="PRE",
+            cache=False, ignorar_erros=True,
         )
         assert not df.empty
 
@@ -524,19 +507,15 @@ class TestGetEttjHistoricoMock:
         mock_baixar.side_effect = NoDataError("07/04/2026", "simulado")
         with pytest.raises(NoDataError):
             ettj.get_ettj_historico(
-                "07/04/2026",
-                "09/04/2026",
-                curva="PRE",
-                cache=False,
-                ignorar_erros=False,
+                "07/04/2026", "09/04/2026", curva="PRE",
+                cache=False, ignorar_erros=False,
             )
 
     @patch("pyettj.ettj._baixar_raw")
     def test_multiplas_curvas_historico(self, mock_baixar, df_multi_curvas):
         mock_baixar.return_value = df_multi_curvas
         df = ettj.get_ettj_historico(
-            "07/04/2026",
-            "09/04/2026",
+            "07/04/2026", "09/04/2026",
             curva=["PRE", "DIC"],
             cache=False,
         )
@@ -547,8 +526,8 @@ class TestGetEttjHistoricoMock:
 # 7. EXCEÇÕES — comportamento e atributos
 # ===========================================================================
 
-
 class TestExcecoes:
+
     def test_holiday_error_tem_sugestao(self):
         # Sábado deve sugerir próxima segunda
         with pytest.raises(HolidayError) as exc:
@@ -581,14 +560,9 @@ class TestExcecoes:
 
     def test_importacao_direta_de_exceptions(self):
         from pyettj.exceptions import (
-            CacheError,
-            CurvaInvalidaError,
-            DataFormatoError,
-            HolidayError,
-            NoDataError,
-            ParsingError,
+            HolidayError, NoDataError, CurvaInvalidaError,
+            DataFormatoError, CacheError, ParsingError,
         )
-
         assert HolidayError
         assert NoDataError
         assert CurvaInvalidaError
@@ -600,7 +574,6 @@ class TestExcecoes:
 # ===========================================================================
 # 8. TESTES COM REDE REAL (marcados — executar só quando há conexão)
 # ===========================================================================
-
 
 @pytest.mark.network
 class TestGetEttjNetwork:
@@ -616,21 +589,22 @@ class TestGetEttjNetwork:
     PROXIES = None  # Sobrescrever via fixture ou variável de ambiente
 
     def test_get_ettj_pre_real(self):
-        df = ettj.get_ettj("09/04/2026", curva="PRE", proxies=self.PROXIES, cache=False)
+        df = ettj.get_ettj("09/04/2026", curva="PRE",
+                           proxies=self.PROXIES, cache=False)
         assert not df.empty
         assert df["curva"].iloc[0] == "PRE"
-        assert 0.05 < df["taxa"].mean() < 0.30  # taxa entre 5% e 30%
-        assert len(df) >= 200  # PRE tem ~285 vértices
+        assert 0.05 < df["taxa"].mean() < 0.30   # taxa entre 5% e 30%
+        assert len(df) >= 200                     # PRE tem ~285 vértices
 
     def test_get_ettj_dic_real(self):
-        df = ettj.get_ettj("09/04/2026", curva="DIC", proxies=self.PROXIES, cache=False)
+        df = ettj.get_ettj("09/04/2026", curva="DIC",
+                           proxies=self.PROXIES, cache=False)
         assert not df.empty
         assert df["curva"].iloc[0] == "DIC"
 
     def test_get_ettj_multiplas_curvas_real(self):
-        df = ettj.get_ettj(
-            "09/04/2026", curva=["PRE", "DIC"], proxies=self.PROXIES, cache=False
-        )
+        df = ettj.get_ettj("09/04/2026", curva=["PRE", "DIC"],
+                           proxies=self.PROXIES, cache=False)
         assert set(df["curva"].unique()) == {"PRE", "DIC"}
 
     def test_feriado_pascoa_2026(self):

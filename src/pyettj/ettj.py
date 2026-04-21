@@ -41,9 +41,9 @@ from typing import Dict, List, Optional, Union
 
 import pandas as pd
 import requests
-import urllib3
+import warnings
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+warnings.filterwarnings("ignore")
 
 from pyettj.exceptions import (
     CurvaInvalidaError,

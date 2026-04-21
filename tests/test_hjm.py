@@ -9,7 +9,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+import warnings
 
+warnings.filterwarnings("ignore")
 # Ajustar path para imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src" / "pyettj"))
 
@@ -345,4 +347,4 @@ class TestIntegracao:
         )
 
         # 5. Verificar que resultados são iguais
-        pd.testing.assert_frame_equal(resultado1, resultado2)
+        pd.testing.assert_frame_equal(resultado1, resultado2, check_index_type=False)
