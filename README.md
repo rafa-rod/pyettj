@@ -28,7 +28,7 @@
 **pyettj** é uma biblioteca Python para capturar dados públicos das curvas de juros ou estrutura a termo da taxa de juros (ETTJ) com dados da B3 (Brasil, Bolsa e Balcão) e ANBIMA. Também é possível modelar curvas usando os modelos Heath-Jarrow-Morton (HJM) e Nelson-Siegel-Svensson (NSS).
 
 <center>
-<img src="https://raw.githubusercontent.com/rafa-rod/pyettj/main/media/curva_pre.gif" style="width:60%;"/>
+<img src="https://raw.githubusercontent.com/rafa-rod/pyettj/main/media/curva_pre.gif" style="width:80%;"/>
 </center>
 
 ## Instalação
