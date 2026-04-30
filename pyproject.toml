@@ -59,3 +59,8 @@ exclude_lines = [
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
 ]
+
+[tool.pytest.ini_options]
+markers = [
+    "network: testes que requerem conexão com a internet",
+]
