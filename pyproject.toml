@@ -9,6 +9,18 @@ repository = "https://github.com/rafa-rod/pyettj"
 homepage = "https://github.com/rafa-rod/pyettj"
 keywords = ["curva", "ettj", "risk-management", "juros", "svensson", "mercado-financeiro", "hjm", "anbima", "yield-curve", "financial-market", "quant", "quantitative-finance",
             "finance", "estresse", "Heath-Jarrow-Morton", "cenario-estresse", "stress-test"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
 packages = [
     { include = "pyettj", from = "src" }
 ]
@@ -26,6 +38,7 @@ urllib3 = "^2.6.3"
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.2"
 pytest-cov = "^6.0.0"
+twine = ">=6.0"
 
 [build-system]
 requires = ["poetry-core"]
