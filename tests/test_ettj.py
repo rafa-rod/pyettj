@@ -253,8 +253,11 @@ class TestGetEttjMock:
         assert exc.value.sugestao is not None
 
     def test_data_futura_lanca_no_data_error(self):
-        data_futura = (date.today() + timedelta(days=30)).strftime("%d/%m/%Y")
-        with pytest.raises(NoDataError):
+        # Usa 400 dias para garantir que não coincide com feriado próximo.
+        # Aceita HolidayError também: se cair em feriado, o comportamento
+        # continua correto — não há dados disponíveis.
+        data_futura = (date.today() + timedelta(days=400)).strftime("%d/%m/%Y")
+        with pytest.raises((NoDataError, HolidayError)):
             ettj.get_ettj(data_futura, cache=False)
 
     def test_curva_invalida_lanca_excecao(self):
