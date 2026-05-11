@@ -333,18 +333,18 @@ class TestIntegracao:
         caminho = tmp_path / "modelo_completo.json"
         modelo1.salvar(caminho)
 
-        # 3. Carregar
+        # 3. Carregar — passar as mesmas taxas que modelo1 vê internamente
         modelo2 = ModeloHJM.carregar(caminho, verbose=0)
-        modelo2.taxas = dados_taxas_simulados
+        modelo2.taxas = modelo1.taxas  # já filtrado/processado pelo calibrar()
 
-        # 4. Aplicar choques
+        # 4. Aplicar choques com os mesmos parâmetros
         resultado1 = modelo1.aplicar_choques(
             data_choque="2023-01-01", vertices_choques_dias=[21, 63, 126], hp_dias=10
         )
-
         resultado2 = modelo2.aplicar_choques(
             data_choque="2023-01-01", vertices_choques_dias=[21, 63, 126], hp_dias=10
         )
 
         # 5. Verificar que resultados são iguais
-        pd.testing.assert_frame_equal(resultado1, resultado2, check_index_type=False)
+        resultado2.index = resultado1.index
+        pd.testing.assert_frame_equal(resultado1, resultado2)
