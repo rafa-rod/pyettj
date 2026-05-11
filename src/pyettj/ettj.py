@@ -44,13 +44,14 @@ from typing import Dict, List, Optional, Union
 
 import pandas as pd
 import requests
-<<<<<<< HEAD
-import warnings
-=======
->>>>>>> ajusta feriados
 
 warnings.filterwarnings("ignore")
 
+from pyettj.cache import (
+    _cache_ler,
+    _cache_salvar,
+    _cache_valido,
+)
 from pyettj.exceptions import (
     CurvaInvalidaError,
     DataFormatoError,
@@ -62,19 +63,13 @@ from pyettj.exceptions import (
     ServerUnavailableError,
     TimeoutError,
 )
-from pyettj.cache import (
-    _cache_valido,
-    _cache_ler,
-    _cache_salvar,
-    cache_info,
-    cache_clear,
-)
 
 # ---------------------------------------------------------------------------
 # bizdays — opcional; usado apenas em listar_dias_uteis
 # ---------------------------------------------------------------------------
 try:
     import bizdays
+
     _BIZDAYS_DISPONIVEL = True
 except ImportError:
     _BIZDAYS_DISPONIVEL = False
@@ -144,9 +139,7 @@ _HEADERS_DEFAULT = {
 # ---------------------------------------------------------------------------
 # Caminhos de feriados
 # ---------------------------------------------------------------------------
-_ANBIMA_HOLIDAYS_URL = (
-    "https://www.anbima.com.br/feriados/arqs/feriados_nacionais.xls"
-)
+_ANBIMA_HOLIDAYS_URL = "https://www.anbima.com.br/feriados/arqs/feriados_nacionais.xls"
 _CACHE_FERIADOS = Path.home() / ".pyettj" / "Feriados.csv"
 _FERIADOS_PACOTE = Path(__file__).parent / "Feriados.csv"
 
@@ -154,6 +147,7 @@ _FERIADOS_PACOTE = Path(__file__).parent / "Feriados.csv"
 # ---------------------------------------------------------------------------
 # Helpers internos
 # ---------------------------------------------------------------------------
+
 
 def _parse_data(data: str) -> date:
     """Converte string de data para objeto date.
@@ -290,12 +284,10 @@ def _baixar_raw(
             raise ProxyAuthError(
                 "Falha no proxy. Verifique as configurações de proxy."
             ) from e
-        except requests.exceptions.Timeout as e:
-            ultimo_erro = TimeoutError(
-                f"Timeout após {timeout}s ao acessar {url}"
-            )
+        except requests.exceptions.Timeout:
+            ultimo_erro = TimeoutError(f"Timeout após {timeout}s ao acessar {url}")
             if tentativa < retry:
-                time.sleep(2 ** tentativa)
+                time.sleep(2**tentativa)
             continue
         except requests.exceptions.ConnectionError as e:
             raise PyETTJError(f"Erro de conexão: {e}") from e
@@ -307,7 +299,7 @@ def _baixar_raw(
                 f"Servidor B3 indisponível (HTTP {r.status_code})."
             )
             if tentativa < retry:
-                time.sleep(2 ** tentativa)
+                time.sleep(2**tentativa)
             continue
         if r.status_code != 200:
             raise PyETTJError(f"HTTP {r.status_code} ao acessar {url}")
@@ -392,25 +384,27 @@ def _parsear_txt(
             continue
 
         try:
-            dc      = int(linha[41:46])
-            du      = int(linha[46:51])
-            sinal   = 1 if linha[51] == "+" else -1
-            taxa    = sinal * int(linha[52:66]) / 1e9
+            dc = int(linha[41:46])
+            du = int(linha[46:51])
+            sinal = 1 if linha[51] == "+" else -1
+            taxa = sinal * int(linha[52:66]) / 1e9
             vertice = linha[66]
-            desc    = linha[26:41].rstrip()
+            desc = linha[26:41].rstrip()
         except (ValueError, IndexError):
             erros += 1
             continue
 
-        registros.append({
-            "refdate":       data_ref,
-            "curva":         cod,
-            "descricao":     desc,
-            "dias_corridos": dc,
-            "dias_uteis":    du,
-            "taxa":          taxa,
-            "vertice":       vertice,
-        })
+        registros.append(
+            {
+                "refdate": data_ref,
+                "curva": cod,
+                "descricao": desc,
+                "dias_corridos": dc,
+                "dias_uteis": du,
+                "taxa": taxa,
+                "vertice": vertice,
+            }
+        )
 
     if erros > 0:
         warnings.warn(
@@ -422,8 +416,13 @@ def _parsear_txt(
     if not registros:
         return pd.DataFrame(
             columns=[
-                "refdate", "curva", "descricao",
-                "dias_corridos", "dias_uteis", "taxa", "vertice",
+                "refdate",
+                "curva",
+                "descricao",
+                "dias_corridos",
+                "dias_uteis",
+                "taxa",
+                "vertice",
             ]
         )
 
@@ -466,6 +465,7 @@ def _validar_output(
 # API pública
 # ---------------------------------------------------------------------------
 
+
 def listar_curvas(verbose: bool = True) -> pd.DataFrame:
     """
     Lista todas as curvas disponíveis no arquivo TaxaSwap da B3.
@@ -485,8 +485,7 @@ def listar_curvas(verbose: bool = True) -> pd.DataFrame:
     >>> curvas = listar_curvas(verbose=False)  # só o DataFrame, sem imprimir
     """
     df = pd.DataFrame(
-        [{"codigo": k, "descricao": v}
-         for k, v in sorted(CURVAS_DISPONIVEIS.items())]
+        [{"codigo": k, "descricao": v} for k, v in sorted(CURVAS_DISPONIVEIS.items())]
     )
     if verbose:
         print(f"\n{'Código':<8}  Descrição")
@@ -540,9 +539,7 @@ def listar_dias_uteis(
     d_fim = _parse_data(ate)
 
     if d_ini > d_fim:
-        raise PyETTJError(
-            f"Data inicial ({de}) é posterior à data final ({ate})."
-        )
+        raise PyETTJError(f"Data inicial ({de}) é posterior à data final ({ate}).")
 
     cal = _carregar_calendario(proxies=proxies)
 
@@ -663,12 +660,16 @@ def get_ettj(
             if not df_filtrado.empty:
                 mtime_str = ""
                 from pyettj.cache import _cache_path
+
                 try:
                     from datetime import datetime as _dt
+
                     mtime = _dt.fromtimestamp(_cache_path(d).stat().st_mtime)
                     delta = _dt.now() - mtime
                     h, m = divmod(int(delta.total_seconds() / 60), 60)
-                    mtime_str = f" (salvo há {h}h{m:02d}min)" if h else f" (salvo há {m}min)"
+                    mtime_str = (
+                        f" (salvo há {h}h{m:02d}min)" if h else f" (salvo há {m}min)"
+                    )
                 except Exception:
                     pass
                 print(f"[pyettj] Cache: {data_str}{mtime_str}")
@@ -750,9 +751,7 @@ def get_ettj_historico(
     d_fim = _parse_data(data_fim)
 
     if d_ini > d_fim:
-        raise PyETTJError(
-            f"data_ini ({data_ini}) é posterior a data_fim ({data_fim})."
-        )
+        raise PyETTJError(f"data_ini ({data_ini}) é posterior a data_fim ({data_fim}).")
 
     frames: List[pd.DataFrame] = []
     datas_sem_dados: List[str] = []
@@ -777,7 +776,7 @@ def get_ettj_historico(
             )
             frames.append(df)
 
-        except (HolidayError, NoDataError) as e:
+        except (HolidayError, NoDataError):
             datas_sem_dados.append(data_str)
 
         except PyETTJError as e:
@@ -808,8 +807,7 @@ def get_ettj_historico(
         amostra = ", ".join(datas_com_erro[:5])
         reticencias = " ..." if n > 5 else ""
         warnings.warn(
-            f"[pyettj] {n} data(s) com erro de download/parse: "
-            f"{amostra}{reticencias}",
+            f"[pyettj] {n} data(s) com erro de download/parse: {amostra}{reticencias}",
             stacklevel=2,
         )
 
