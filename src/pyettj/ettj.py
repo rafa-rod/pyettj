@@ -548,7 +548,7 @@ def listar_dias_uteis(
         dias = [
             d.strftime("%d/%m/%Y")
             for d in (d_ini + timedelta(n) for n in range((d_fim - d_ini).days + 1))
-            if cal.isbus(d)
+            if cal.isbizday(d.strftime("%Y-%m-%d"))
         ]
     else:
         # Fallback: apenas fins de semana
