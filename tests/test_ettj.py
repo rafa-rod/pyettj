@@ -7,7 +7,7 @@ Testes para o módulo ettj.py (novo endpoint B3 / TaxaSwap).
 Cobertura:
     - Parsing e validação de datas
     - listar_curvas
-    - listar_dias_uteis
+    - listar_dias_uteis  (inclui testes de feriados nacionais ANBIMA)
     - get_ettj: estrutura do DataFrame, colunas, tipos, valores
     - get_ettj: múltiplas curvas
     - get_ettj: cache (leitura e escrita)
@@ -239,6 +239,57 @@ class TestListarDiasUteis:
         dias = ettj.listar_dias_uteis("06/04/2026", "10/04/2026")
         assert len(dias) == 5
 
+    # --- novos testes: feriados nacionais ---
+
+    def test_exclui_tiradentes(self):
+        """21/04 = Tiradentes — feriado nacional fixo (2026 = terça-feira)."""
+        pytest.importorskip("bizdays")
+        dias = ettj.listar_dias_uteis("20/04/2026", "22/04/2026")
+        assert "21/04/2026" not in dias
+
+    def test_exclui_natal(self):
+        """25/12 = Natal — feriado nacional fixo (2026 = sexta-feira)."""
+        pytest.importorskip("bizdays")
+        dias = ettj.listar_dias_uteis("24/12/2026", "26/12/2026")
+        assert "25/12/2026" not in dias
+
+    def test_exclui_sete_setembro(self):
+        """07/09 = Independência — feriado nacional fixo (2026 = segunda-feira)."""
+        pytest.importorskip("bizdays")
+        dias = ettj.listar_dias_uteis("05/09/2026", "09/09/2026")
+        assert "07/09/2026" not in dias
+
+    def test_fallback_sem_bizdays(self, monkeypatch):
+        """Sem bizdays: deve retornar lista sem fins de semana e emitir UserWarning."""
+        import pyettj.ettj as ettj_mod
+
+        monkeypatch.setattr(ettj_mod, "_BIZDAYS_DISPONIVEL", False)
+        with pytest.warns(UserWarning, match="bizdays"):
+            dias = ettj_mod.listar_dias_uteis("06/04/2026", "10/04/2026")
+        assert len(dias) == 5  # seg a sex, sem feriados
+
+    def test_calendario_cache_reutilizado(self, tmp_path, monkeypatch):
+        """O cache de feriados em _CACHE_FERIADOS deve ser respeitado entre chamadas."""
+        pytest.importorskip("bizdays")
+        import pyettj.ettj as ettj_mod
+
+        monkeypatch.setattr(ettj_mod, "_CACHE_FERIADOS", tmp_path / "Feriados.csv")
+        # Primeira chamada: sem cache local → usa pacote ou download
+        dias1 = ettj_mod.listar_dias_uteis("06/04/2026", "10/04/2026")
+        # Segunda chamada: deve usar cache recém-criado
+        dias2 = ettj_mod.listar_dias_uteis("06/04/2026", "10/04/2026")
+        assert dias1 == dias2
+
+    def test_resultado_ordenado(self):
+        """A lista retornada deve estar em ordem crescente."""
+        dias = ettj.listar_dias_uteis("01/04/2026", "09/04/2026")
+        assert dias == sorted(dias)
+
+    def test_aceita_proxies_sem_falhar(self):
+        """Passar proxies=None não deve causar erro."""
+        dias = ettj.listar_dias_uteis("07/04/2026", "09/04/2026", proxies=None)
+        assert len(dias) == 3
+
 
 # ===========================================================================
 # 4. GET_ETTJ — validações sem rede (mock)
@@ -340,10 +391,6 @@ class TestGetEttjMock:
 
     @patch("pyettj.ettj._baixar_raw")
     def test_zip_vazio_lanca_no_data_error(self, mock_baixar):
-        # ZIP vazio = 22 bytes
-        buf = io.BytesIO()
-        with zipfile.ZipFile(buf, "w"):
-            pass
         mock_baixar.side_effect = NoDataError(
             "09/04/2026", "arquivo vazio — possível feriado"
         )
@@ -438,6 +485,32 @@ class TestCache:
         # (dado antigo = cache permanente)
         assert mock_baixar.call_count == 1
 
+    def test_set_cache_dir(self, tmp_path, capsys):
+        import pyettj.cache as _cache_mod
+
+        outro_dir = tmp_path / "outro_cache"
+        _cache_mod.set_cache_dir(str(outro_dir))  # chama direto no módulo
+        out = capsys.readouterr().out
+        assert "outro_cache" in out
+
+        # Cache deve usar o novo diretório
+        df = _df_esperado_pre()
+        _cache_salvar(date(2026, 1, 2), df)
+        assert (outro_dir / "TS" / "2026-01-02.csv").exists()
+
+        # Restaurar padrão para não afetar outros testes
+        _cache_mod._CACHE_DIR_OVERRIDE = None
+
+        # Cache deve usar o novo diretório
+        df = _df_esperado_pre()
+        _cache_salvar(date(2026, 1, 2), df)
+        assert (outro_dir / "TS" / "2026-01-02.csv").exists()
+
+        # Restaurar padrão para não afetar outros testes
+        import pyettj.cache as _cache_mod
+
+        _cache_mod._CACHE_DIR_OVERRIDE = None
+
 
 
     def test_set_cache_dir(self, tmp_path, capsys):
@@ -526,6 +599,7 @@ class TestGetEttjHistoricoMock:
 
 
 # ===========================================================================
+<<<<<<< HEAD
 # 7. EXCEÇÕES — comportamento e atributos
 # ===========================================================================
 
@@ -576,6 +650,9 @@ class TestExcecoes:
 
 # ===========================================================================
 # 8. TESTES COM REDE REAL (marcados — executar só quando há conexão)
+=======
+# 7. TESTES COM REDE REAL (marcados — executar só quando há conexão)
+>>>>>>> ajusta feriados
 # ===========================================================================
 
 @pytest.mark.network

@@ -33,9 +33,6 @@ from typing import Optional, Union
 
 import pandas as pd
 
-from pyettj.exceptions import CacheError
-
-
 # ---------------------------------------------------------------------------
 # Diretório de cache
 # ---------------------------------------------------------------------------
@@ -93,6 +90,7 @@ def _cache_path(d: date) -> Path:
 # TTL
 # ---------------------------------------------------------------------------
 
+
 def _cache_valido(d: date) -> bool:
     """Verifica se o cache para a data d está válido conforme política de TTL."""
     path = _cache_path(d)
@@ -123,6 +121,7 @@ def _cache_valido(d: date) -> bool:
 # Leitura e escrita
 # ---------------------------------------------------------------------------
 
+
 def _cache_ler(d: date) -> Optional[pd.DataFrame]:
     """
     Lê o DataFrame completo do cache para a data d.
@@ -136,8 +135,7 @@ def _cache_ler(d: date) -> Optional[pd.DataFrame]:
         return df
     except Exception as e:
         warnings.warn(
-            f"[pyettj] Cache corrompido para {d.isoformat()}, "
-            f"será rebaixado: {e}",
+            f"[pyettj] Cache corrompido para {d.isoformat()}, será rebaixado: {e}",
             stacklevel=4,
         )
         try:
@@ -167,6 +165,7 @@ def _cache_salvar(d: date, df: pd.DataFrame) -> None:
 # API pública
 # ---------------------------------------------------------------------------
 
+
 def cache_info() -> None:
     """
     Exibe estatísticas do cache local.
@@ -191,7 +190,7 @@ def cache_info() -> None:
         return
 
     total_bytes = sum(f.stat().st_size for f in arquivos)
-    total_mb    = total_bytes / 1_048_576
+    total_mb = total_bytes / 1_048_576
 
     datas = []
     for f in arquivos:
@@ -233,6 +232,7 @@ def cache_clear(antes_de: Optional[str] = None) -> None:
         for fmt in ("%d/%m/%Y", "%Y-%m-%d"):
             try:
                 from datetime import datetime as _dt
+
                 limite = _dt.strptime(antes_de.strip(), fmt).date()
                 break
             except ValueError:

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 ettj.py
 =======
@@ -37,11 +38,16 @@ import time
 import warnings
 import zipfile
 from datetime import date, datetime, timedelta
+from io import BytesIO
+from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 import pandas as pd
 import requests
+<<<<<<< HEAD
 import warnings
+=======
+>>>>>>> ajusta feriados
 
 warnings.filterwarnings("ignore")
 
@@ -65,6 +71,15 @@ from pyettj.cache import (
 )
 
 # ---------------------------------------------------------------------------
+# bizdays — opcional; usado apenas em listar_dias_uteis
+# ---------------------------------------------------------------------------
+try:
+    import bizdays
+    _BIZDAYS_DISPONIVEL = True
+except ImportError:
+    _BIZDAYS_DISPONIVEL = False
+
+# ---------------------------------------------------------------------------
 # Catálogo de curvas disponíveis (extraído do TaxaSwap de 09/04/2026)
 # ---------------------------------------------------------------------------
 CURVAS_DISPONIVEIS: Dict[str, str] = {
@@ -81,101 +96,38 @@ CURVAS_DISPONIVEIS: Dict[str, str] = {
     "CNH": "CNH X DOL",
     "CNL": "Curva Futuro CNH",
     "CNY": "CNY X DOL",
-    "CYI": "CONV. YIELD",
-    "CYM": "Convenience Yield M",
-    "CYS": "Convenience Yield S",
-    "CYX": "Convenience Yield X",
-    "DCL": "CUPOM LIMPO - Dólar",
-    "DCO": "SELIC X DOL",
-    "DCP": "CUPOM LIMPO",
-    "DEU": "DOL X EUR",
-    "DGL": "Cupom Limpo de Ouro",
-    "DIC": "DI X IPCA",
+    "CYI": "CONV. IPCA",
+    "DCL": "Cupom Limpo Dólar",
+    "DIC": "DIxIPCA",
+    "DIJ": "DIxIGPM",
     "DIM": "DIxIGPM",
-    "DOC": "DIxXDOL Cupom limpo",
-    "DOL": "DIxDOL",
-    "DP":  "DOLxPRE",
-    "DPL": "Cupom Limpo de Petro",
-    "DYE": "DOL X YEN",
-    "EBR": "Futuro de Ethereum",
-    "ECC": "CUPOM SUJO DE EURO",
-    "EST": "Curva Futuro Taxa",
-    "ETR": "Futuro de Ethereum",
-    "EUC": "CUPOM EURO",
-    "EUR": "R$ x EURO",
-    "FTS": "FTSE/JSE TOP 40",
-    "GBP": "DOL X GBP",
-    "GLD": "Curva Futuro Ouro",
-    "HAN": "HANG SENG INDEX",
-    "IAS": "IPCA SINTÉTICO",
-    "INP": "IBOVESPA",
-    "IPS": "IGPxPRE SINTET.",
-    "ITC": "ITC X SELIC",
-    "JPY": "REAIS X IENE",
-    "LEU": "Juros em EUR",
-    "LIB": "Juros em USD",
-    "LJP": "Juros em JPY",
-    "MBR": "Curva de Índice BR",
+    "DOC": "DIxDOL Cupom",
+    "DOL": "DÓLAR",
+    "DPR": "DIxPRE",
+    "EUR": "EURO",
+    "GBP": "LIBRA",
+    "HUF": "HUF X DOL",
+    "IDR": "IDR X DOL",
+    "ILP": "INPC Longo Prazo",
+    "INR": "INR X DOL",
+    "IPC": "DIxIPCA Curto Prazo",
+    "JPY": "YEN",
+    "KRW": "KRW X DOL",
     "MXN": "MXN X DOL",
+    "MYR": "MYR X DOL",
     "NOK": "NOK X DOL",
     "NZD": "NZD X DOL",
+    "PHP": "PHP X DOL",
+    "PLN": "PLN X DOL",
     "PRE": "DIxPRE",
-    "PTX": "PTAX",
-    "RDA": "REAIS X DOLAR A",
-    "RDC": "REAIS X DOLAR C",
-    "RFS": "REAIS X FRANCO",
-    "RLI": "REAIS X LIBRA",
-    "RPL": "REAIS X PESO CHL",
-    "RPM": "REAIS X PESO MEX",
-    "RRA": "REAIS X RANDE SUL",
     "RUB": "RUB X DOL",
-    "RYN": "REAIS X IUAN",
-    "RYR": "REAIS X LIRA TUR",
-    "RZE": "REAIS X DOLAR NZL",
-    "SAB": "BOI GORDO",
-    "SAC": "C.ARÁBICA (US$)",
-    "SAM": "MILHO",
-    "SAU": "SPREAD DOL AUST",
-    "SBP": "S.BASKET X PRÉ",
-    "SBR": "Futuro de Solana",
-    "SCA": "SPREAD DOL CANADENSE",
-    "SCF": "SPREAD FRANCO SUÍÇO",
-    "SCL": "SPREAD PESO CHILENO",
-    "SCN": "SPREAD IUAN X DOL",
-    "SDE": "DOLx EURO",
     "SEK": "SEK X DOL",
-    "SFR": "Curva Futuro Taxa FR",
-    "SGP": "SPREAD LIBRA X DOL",
-    "SJC": "Curva de Soja CBOT",
-    "SLP": "SELICxPRE",
-    "SLT": "SPREAD LTN",
-    "SML": "Curva Small Cap",
-    "SMX": "SPREAD PESO MEX",
-    "SNZ": "SPREAD DOLAR NZL",
-    "SOL": "Futuro de Solana",
-    "SOY": "Curva de Soja Futura",
-    "STR": "SPREAD LIRA TURCA",
-    "SYD": "SPREAD IEN X DOL",
-    "SZA": "SPREAD RANDE SUL AFR",
-    "TFP": "TBFxPRE",
-    "TIC": "NTN-B",
-    "TIE": "Curva Futuro Taxa IE",
-    "TIM": "NTN-C",
-    "TJP": "TJLPxPRE",
-    "TLF": "LFT",
-    "TP":  "TRxPRE",
-    "TPR": "LTN",
-    "TR":  "DIxTR",
+    "SGD": "SGD X DOL",
+    "THB": "THB X DOL",
     "TRY": "TRY X DOL",
-    "VIX": "Curva Futuro VIX",
-    "XFI": "IFIX",
-    "YCC": "Cupom sujo de yen",
-    "YCL": "IENE - Cupom Limpo",
-    "YCS": "IEN X CUPOM",
+    "TWD": "TWD X DOL",
+    "USD": "DÓLAR",
     "ZAR": "ZAR X DOL",
-    "ZEU": "Curva Zero Juro EUR",
-    "ZMX": "Curva Zero Juro MXN",
-    "ZUS": "Curva Zero Juro USD",
 }
 
 CURVA_PADRAO = "PRE"
@@ -186,12 +138,17 @@ _HEADERS_DEFAULT = {
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/124.0.0.0 Safari/537.36"
     ),
-    "Referer": (
-        "https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/"
-        "market-data/historico/boletins-diarios/pesquisa-por-pregao/"
-        "pesquisa-por-pregao/"
-    ),
+    "Accept": "*/*",
 }
+
+# ---------------------------------------------------------------------------
+# Caminhos de feriados
+# ---------------------------------------------------------------------------
+_ANBIMA_HOLIDAYS_URL = (
+    "https://www.anbima.com.br/feriados/arqs/feriados_nacionais.xls"
+)
+_CACHE_FERIADOS = Path.home() / ".pyettj" / "Feriados.csv"
+_FERIADOS_PACOTE = Path(__file__).parent / "Feriados.csv"
 
 
 # ---------------------------------------------------------------------------
@@ -199,7 +156,8 @@ _HEADERS_DEFAULT = {
 # ---------------------------------------------------------------------------
 
 def _parse_data(data: str) -> date:
-    """Converte string de data para objeto date. Aceita dd/mm/yyyy ou yyyy-mm-dd."""
+    """Converte string de data para objeto date.
+    Aceita dd/mm/yyyy ou yyyy-mm-dd."""
     for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y"):
         try:
             return datetime.strptime(data.strip(), fmt).date()
@@ -228,6 +186,85 @@ def _montar_url(d: date) -> str:
 def _filtrar_curvas(df: pd.DataFrame, curvas: List[str]) -> pd.DataFrame:
     """Filtra o DataFrame completo pelas curvas solicitadas."""
     return df[df["curva"].isin(curvas)].reset_index(drop=True)
+
+
+def _carregar_calendario(
+    proxies: Optional[Dict] = None,
+) -> "Optional[bizdays.Calendar]":
+    """
+    Tenta carregar o calendário ANBIMA com feriados nacionais.
+
+    Estratégia de fallback (para em caso de sucesso):
+        1. Cache em ~/.pyettj/Feriados.csv  (evita download a cada chamada)
+        2. Download do site ANBIMA
+        3. Feriados.csv embutido no pacote
+        4. None  (chamador usa apenas fins de semana)
+
+    Retorna um bizdays.Calendar ou None se bizdays não estiver instalado
+    ou se nenhuma fonte de feriados estiver acessível.
+    """
+    if not _BIZDAYS_DISPONIVEL:
+        warnings.warn(
+            "[pyettj] bizdays não instalado — feriados nacionais não serão "
+            "excluídos de listar_dias_uteis. "
+            "Instale com: pip install bizdays",
+            UserWarning,
+            stacklevel=3,
+        )
+        return None
+
+    def _montar_cal(caminho: Path) -> "bizdays.Calendar":
+        holidays = bizdays.load_holidays(str(caminho))
+        return bizdays.Calendar(holidays, ["Sunday", "Saturday"], name="Brazil")
+
+    # --- Fonte 1: cache local ---
+    if _CACHE_FERIADOS.exists():
+        try:
+            return _montar_cal(_CACHE_FERIADOS)
+        except Exception:
+            pass  # cache corrompido → tenta download
+
+    # --- Fonte 2: download ANBIMA ---
+    try:
+        r = requests.get(
+            _ANBIMA_HOLIDAYS_URL,
+            proxies=proxies,
+            verify=True,
+            timeout=15,
+        )
+        if r.status_code == 200:
+            df = pd.read_excel(BytesIO(r.content), engine="calamine")
+            fonte_idx = df[df["Data"] == "Fonte: ANBIMA"].index
+            datas = (
+                df["Data"][: fonte_idx[0]].values
+                if len(fonte_idx) > 0
+                else df["Data"].dropna().values
+            )
+            feriados_df = pd.DataFrame(
+                {"Feriados ANBIMA": pd.to_datetime(datas).values}
+            )
+            _CACHE_FERIADOS.parent.mkdir(parents=True, exist_ok=True)
+            feriados_df.to_csv(_CACHE_FERIADOS, index=False, header=False)
+            return _montar_cal(_CACHE_FERIADOS)
+    except Exception:
+        pass  # sem rede ou ANBIMA indisponível → próximo fallback
+
+    # --- Fonte 3: arquivo embutido no pacote ---
+    if _FERIADOS_PACOTE.exists():
+        try:
+            return _montar_cal(_FERIADOS_PACOTE)
+        except Exception:
+            pass
+
+    # --- Fonte 4: nenhuma fonte disponível ---
+    warnings.warn(
+        "[pyettj] Não foi possível carregar os feriados nacionais "
+        "(sem acesso à ANBIMA e arquivo local não encontrado). "
+        "listar_dias_uteis excluirá apenas fins de semana.",
+        UserWarning,
+        stacklevel=3,
+    )
+    return None
 
 
 def _baixar_raw(
@@ -460,9 +497,14 @@ def listar_curvas(verbose: bool = True) -> pd.DataFrame:
     return df
 
 
-def listar_dias_uteis(de: str, ate: str) -> List[str]:
+def listar_dias_uteis(
+    de: str,
+    ate: str,
+    proxies: Optional[Dict[str, str]] = None,
+) -> List[str]:
     """
-    Retorna lista de dias úteis entre duas datas (apenas fins de semana excluídos).
+    Retorna lista de dias úteis entre duas datas, excluindo fins de semana
+    e feriados nacionais (calendário ANBIMA).
 
     Parâmetros
     ----------
@@ -470,20 +512,27 @@ def listar_dias_uteis(de: str, ate: str) -> List[str]:
         Data inicial no formato 'dd/mm/yyyy' ou 'yyyy-mm-dd'.
     ate : str
         Data final no formato 'dd/mm/yyyy' ou 'yyyy-mm-dd'.
+    proxies : dict, opcional
+        Dicionário de proxies para o download dos feriados da ANBIMA.
+        Necessário apenas em ambientes corporativos sem acesso direto.
 
     Retorno
     -------
     list[str] com datas no formato 'dd/mm/yyyy', ordenadas crescentemente.
 
-    Nota
-    ----
-    Feriados nacionais não são excluídos automaticamente — dias com
-    ausência de dados serão identificados pelo get_ettj_historico,
-    que os pula silenciosamente.
+    Notas
+    -----
+    Os feriados são obtidos do site da ANBIMA e armazenados em cache local
+    (~/.pyettj/Feriados.csv) para evitar downloads repetidos. Como fallback,
+    usa o arquivo Feriados.csv embutido no pacote.
+
+    Se nenhuma fonte de feriados estiver disponível (sem rede e sem arquivo
+    local), um warning é emitido e apenas fins de semana são excluídos.
 
     Exemplos
     --------
     >>> dias = listar_dias_uteis("01/04/2026", "09/04/2026")
+    >>> dias = listar_dias_uteis("01/04/2026", "09/04/2026", proxies=proxies)
     >>> for d in dias:
     ...     df = get_ettj(d, proxies=proxies)
     """
@@ -495,14 +544,25 @@ def listar_dias_uteis(de: str, ate: str) -> List[str]:
             f"Data inicial ({de}) é posterior à data final ({ate})."
         )
 
-    dias = []
-    d_atual = d_ini
-    while d_atual <= d_fim:
-        if not _is_fim_de_semana(d_atual):
-            dias.append(d_atual.strftime("%d/%m/%Y"))
-        d_atual += timedelta(days=1)
+    cal = _carregar_calendario(proxies=proxies)
 
-    return dias
+    if cal is not None:
+        # bizdays disponível e calendário carregado — usa isbusday
+        dias = [
+            d.strftime("%d/%m/%Y")
+            for d in (d_ini + timedelta(n) for n in range((d_fim - d_ini).days + 1))
+            if cal.isbusday(d)
+        ]
+    else:
+        # Fallback: apenas fins de semana
+        dias = []
+        d_atual = d_ini
+        while d_atual <= d_fim:
+            if not _is_fim_de_semana(d_atual):
+                dias.append(d_atual.strftime("%d/%m/%Y"))
+            d_atual += timedelta(days=1)
+
+    return sorted(dias)
 
 
 def get_ettj(

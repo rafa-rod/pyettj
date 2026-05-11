@@ -18,6 +18,23 @@ docs = ["furo", "jaraco.packaging (>=9.3)", "rst.linker (>=1.9)", "sphinx (>=3.5
 testing = ["jaraco.test", "pytest (!=8.0.*)", "pytest (>=6,!=8.1.*)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)"]
 
 [[package]]
+name = "bizdays"
+version = "1.0.19"
+description = "Functions to handle business days calculations"
+optional = true
+python-versions = ">=3.9"
+groups = ["main"]
+markers = "extra == \"holidays\""
+files = [
+    {file = "bizdays-1.0.19-py3-none-any.whl", hash = "sha256:ae2540f83739c966e4fc62d8a52c79771d3b8cd872210e757b11c2e9fcc9b148"},
+    {file = "bizdays-1.0.19.tar.gz", hash = "sha256:e646d148ae048e35bb98bf57cb865a95a295fdc988133c8e1cce64b45805ef0f"},
+]
+
+[package.dependencies]
+pandas = ">=2,<3"
+pandas-market-calendars = ">=4,<5"
+
+[[package]]
 name = "certifi"
 version = "2024.12.14"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -579,6 +596,30 @@ typing-extensions = {version = ">=4.6.0", markers = "python_version < \"3.13\""}
 test = ["pytest (>=6)"]
 
 [[package]]
+name = "exchange-calendars"
+version = "4.11.1"
+description = "Calendars for securities exchanges"
+optional = true
+python-versions = "~=3.10"
+groups = ["main"]
+markers = "extra == \"holidays\""
+files = [
+    {file = "exchange_calendars-4.11.1-py3-none-any.whl", hash = "sha256:40ec771589e5a9b96b9e09667cd0f3fde7c70444e3a7530b8989ebd0750ee478"},
+    {file = "exchange_calendars-4.11.1.tar.gz", hash = "sha256:bdaf000c3c5a0087341e1fdfe063182d27585bdba3f1a3d0189a13bdb4afea5d"},
+]
+
+[package.dependencies]
+korean_lunar_calendar = "*"
+numpy = "*"
+pandas = "*"
+pyluach = "*"
+toolz = "*"
+tzdata = "*"
+
+[package.extras]
+dev = ["flake8", "hypothesis", "pip-tools", "pytest", "pytest-benchmark", "pytest-xdist"]
+
+[[package]]
 name = "fonttools"
 version = "4.55.8"
 description = "Tools to manipulate font files"
@@ -965,6 +1006,7 @@ files = [
 ]
 
 [[package]]
+<<<<<<< HEAD
 name = "markdown-it-py"
 version = "4.0.0"
 description = "Python port of markdown-it. Markdown parsing, done right!"
@@ -988,6 +1030,20 @@ profiling = ["gprof2dot"]
 rtd = ["ipykernel", "jupyter_sphinx", "mdit-py-plugins (>=0.5.0)", "myst-parser", "pyyaml", "sphinx", "sphinx-book-theme (>=1.0,<2.0)", "sphinx-copybutton", "sphinx-design"]
 testing = ["coverage", "pytest", "pytest-cov", "pytest-regressions", "requests"]
 
+=======
+name = "korean-lunar-calendar"
+version = "0.3.1"
+description = "Korean Lunar Calendar"
+optional = true
+python-versions = "*"
+groups = ["main"]
+markers = "extra == \"holidays\""
+files = [
+    {file = "korean_lunar_calendar-0.3.1-py3-none-any.whl", hash = "sha256:392757135c492c4f42a604e6038042953c35c6f449dda5f27e3f86a7f9c943e5"},
+    {file = "korean_lunar_calendar-0.3.1.tar.gz", hash = "sha256:eb2c485124a061016926bdea6d89efdf9b9fdbf16db55895b6cf1e5bec17b857"},
+]
+
+>>>>>>> ajusta feriados
 [[package]]
 name = "matplotlib"
 version = "3.10.0"
@@ -1291,6 +1347,28 @@ test = ["hypothesis (>=6.46.1)", "pytest (>=7.3.2)", "pytest-xdist (>=2.2.0)"]
 xml = ["lxml (>=4.9.2)"]
 
 [[package]]
+name = "pandas-market-calendars"
+version = "4.6.1"
+description = "Market and exchange trading calendars for pandas"
+optional = true
+python-versions = ">=3.9"
+groups = ["main"]
+markers = "extra == \"holidays\""
+files = [
+    {file = "pandas_market_calendars-4.6.1-py3-none-any.whl", hash = "sha256:e3603bea8f1dce556fb21027a3ab73056296a145c5c440be1f5494e6fb34a4f1"},
+    {file = "pandas_market_calendars-4.6.1.tar.gz", hash = "sha256:cc17e3ccb07548603cf8dbd7050c83f8d6ee9ddf3987a05e1dceab53793a0da8"},
+]
+
+[package.dependencies]
+exchange-calendars = ">=3.3"
+pandas = ">=1.1"
+python-dateutil = "*"
+pytz = "*"
+
+[package.extras]
+dev = ["black", "build", "pre-commit", "pytest"]
+
+[[package]]
 name = "pillow"
 version = "11.1.0"
 description = "Python Imaging Library (Fork)"
@@ -1422,6 +1500,23 @@ files = [
 
 [package.extras]
 windows-terminal = ["colorama (>=0.4.6)"]
+
+[[package]]
+name = "pyluach"
+version = "2.3.0"
+description = "A Python package for dealing with Hebrew (Jewish) calendar dates."
+optional = true
+python-versions = ">=3.8"
+groups = ["main"]
+markers = "extra == \"holidays\""
+files = [
+    {file = "pyluach-2.3.0-py3-none-any.whl", hash = "sha256:4497b731aef59508b079dbf5f00bc5bf4329ac45090a6cd37b5a83756f0e69ab"},
+    {file = "pyluach-2.3.0.tar.gz", hash = "sha256:ec6e30669d1df50c9ca160486da44a8195bb4c7a5d3d533990d0c5b03accd281"},
+]
+
+[package.extras]
+doc = ["sphinx (>=6.1.3,<6.2.0)", "sphinx_rtd_theme (>=1.2.0,<1.3.0)"]
+test = ["beautifulsoup4", "flake8", "pytest", "pytest-cov"]
 
 [[package]]
 name = "pyparsing"
@@ -1744,6 +1839,7 @@ files = [
 ]
 
 [[package]]
+<<<<<<< HEAD
 name = "twine"
 version = "6.2.0"
 description = "Collection of utilities for publishing packages on PyPI"
@@ -1769,6 +1865,20 @@ urllib3 = ">=1.26.0"
 [package.extras]
 keyring = ["keyring (>=21.2.0)"]
 
+=======
+name = "toolz"
+version = "1.1.0"
+description = "List processing tools and functional utilities"
+optional = true
+python-versions = ">=3.9"
+groups = ["main"]
+markers = "extra == \"holidays\""
+files = [
+    {file = "toolz-1.1.0-py3-none-any.whl", hash = "sha256:15ccc861ac51c53696de0a5d6d4607f99c210739caf987b5d2054f3efed429d8"},
+    {file = "toolz-1.1.0.tar.gz", hash = "sha256:27a5c770d068c110d9ed9323f24f1543e83b2f300a687b7891c1a6d56b697b5b"},
+]
+
+>>>>>>> ajusta feriados
 [[package]]
 name = "typing-extensions"
 version = "4.15.0"
@@ -1812,6 +1922,7 @@ h2 = ["h2 (>=4,<5)"]
 socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
 zstd = ["backports-zstd (>=1.0.0) ; python_version < \"3.14\""]
 
+<<<<<<< HEAD
 [[package]]
 name = "zipp"
 version = "3.23.1"
@@ -1832,8 +1943,16 @@ doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linke
 enabler = ["pytest-enabler (>=2.2)"]
 test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more_itertools", "pytest (>=6,!=8.1.*)", "pytest-ignore-flaky"]
 type = ["pytest-mypy"]
+=======
+[extras]
+holidays = ["bizdays"]
+>>>>>>> ajusta feriados
 
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
+<<<<<<< HEAD
 content-hash = "98e51a7fbff785c7b8c922893b3e5e19a024794a2a63ff9af0f8aea7e757b8fc"
+=======
+content-hash = "9cfc50828710c89ca0719351283138e844cf5a5df66eaab98ea13387f8e4f9bf"
+>>>>>>> ajusta feriados

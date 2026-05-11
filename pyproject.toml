@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyettj"
-version = "0.4.0"
+version = "0.4.1"
 description = "Coletar, tratar dados de curvas de juros (ettj) com dados da B3 e ANBIMA e modelar curvas com nielson-svensson e HJM"
 authors = ["Rafael Rodrigues <rafael.rafarod@gmail.com>"]
 license = "MIT"
@@ -34,6 +34,7 @@ numpy = ">=1.26.0"
 scipy = ">=1.13.1"
 matplotlib = ">=3.10.0"
 urllib3 = "^2.6.3"
+bizdays = {version = ">=0.14", optional = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.2"
@@ -47,6 +48,12 @@ build-backend = "poetry.core.masonry.api"
 [tool.coverage.run]
 branch = true
 source = ["src/pyettj"]
+
+[tool.setuptools.package-data]
+pyettj = ["Feriados.csv"]
+
+[tool.poetry.extras]
+holidays = ["bizdays"]
 
 [tool.coverage.report]
 show_missing = true
