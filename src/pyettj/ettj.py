@@ -544,11 +544,11 @@ def listar_dias_uteis(
     cal = _carregar_calendario(proxies=proxies)
 
     if cal is not None:
-        # bizdays disponível e calendário carregado — usa isbusday
+        # bizdays disponível e calendário carregado
         dias = [
             d.strftime("%d/%m/%Y")
             for d in (d_ini + timedelta(n) for n in range((d_fim - d_ini).days + 1))
-            if cal.isbusday(d)
+            if cal.isbus(d)
         ]
     else:
         # Fallback: apenas fins de semana
