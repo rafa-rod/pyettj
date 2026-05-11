@@ -45,21 +45,12 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.11'
-<<<<<<< HEAD
-        uses: codecov/codecov-action@v5
-=======
         uses: codecov/codecov-action@v4
->>>>>>> ajusta feriados
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.xml
           fail_ci_if_error: false
 
-<<<<<<< HEAD
-  publish:
-    name: Publicar no PyPI
-    needs: test
-=======
   test-holidays:
     name: Testes de feriados (bizdays)
     runs-on: ubuntu-latest
@@ -96,7 +87,6 @@ jobs:
   publish:
     name: Publicar no PyPI
     needs: [test, test-holidays]
->>>>>>> ajusta feriados
     runs-on: ubuntu-latest
     if: github.event_name == 'release' && github.event.action == 'created'
 
@@ -116,8 +106,4 @@ jobs:
       - name: Build e publicar
         run: poetry publish --build
         env:
-<<<<<<< HEAD
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
-=======
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
->>>>>>> ajusta feriados
