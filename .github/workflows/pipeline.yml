@@ -1,34 +1,114 @@
-test-holidays:
-  name: Testes de feriados (instalacao limpa)
-  runs-on: ubuntu-latest
+name: CI/CD
 
-  steps:
-    - uses: actions/checkout@v4
+on:
+  push:
+  release:
+    types: [created]
 
-    - name: Setup Python 3.11
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
-      with:
-        version: latest
+jobs:
+  test:
+    name: Testes (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
 
-    - name: Build e instalar o wheel (sem dev deps, sem extras)
-      run: |
-        poetry build -f wheel
-        pip install dist/*.whl pytest
+    steps:
+      - uses: actions/checkout@v4
 
-    - name: Regressao 07/09/2026
-      run: |
-        python - <<'PY'
-        from pyettj import ettj
-        dias = ettj.listar_dias_uteis("31/08/2026", "08/09/2026")
-        assert "07/09/2026" not in dias, dias
-        assert dias[0] == "31/08/2026", dias
-        print("OK:", dias)
-        PY
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Testes de feriados
-      run: pytest tests/ -m "not network" -v -k "feriado or ordenado or setembro or natal or tiradentes"
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache virtualenv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            venv-${{ matrix.python-version }}-
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Run tests (sem rede)
+        run: poetry run pytest tests/ -m "not network" -v --cov=src/pyettj --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.11'
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          fail_ci_if_error: false
+
+  test-holidays:
+    name: Testes de feriados (instalacao limpa)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+
+      - name: Build e instalar o wheel (sem dev deps, sem extras)
+        run: |
+          poetry build -f wheel
+          pip install dist/*.whl pytest
+
+      - name: Regressao 07/09/2026
+        run: |
+          python - <<'PY'
+          from pyettj import ettj
+          dias = ettj.listar_dias_uteis("31/08/2026", "08/09/2026")
+          assert "07/09/2026" not in dias, dias
+          assert dias[0] == "31/08/2026", dias
+          print("OK:", dias)
+          PY
+
+      - name: Testes de feriados
+        run: pytest tests/ -m "not network" -v -k "feriado or ordenado or setembro or natal or tiradentes"
+
+  publish:
+    name: Publicar no PyPI
+    needs: [test, test-holidays]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'created'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+
+      - name: Build e publicar
+        run: poetry publish --build
+        env:
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
