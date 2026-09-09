@@ -8,7 +8,14 @@ from typing import Dict, List, Tuple, Union
 
 import warnings
 
-warnings.filterwarnings("ignore")
+# Suprime apenas o aviso de TLS não verificado (verify=False abaixo), em vez de
+# silenciar todos os warnings do processo.
+try:  # pragma: no cover - depende da versão do urllib3
+    from urllib3.exceptions import InsecureRequestWarning
+
+    warnings.simplefilter("ignore", InsecureRequestWarning)
+except ImportError:  # pragma: no cover
+    pass
 
 
 def get_ettj_anbima(

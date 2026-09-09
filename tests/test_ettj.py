@@ -259,34 +259,42 @@ class TestListarDiasUteis:
 
     def test_exclui_tiradentes(self):
         """21/04 = Tiradentes — feriado nacional fixo (2026 = terça-feira)."""
-        pytest.importorskip("bizdays")
         dias = ettj.listar_dias_uteis("20/04/2026", "22/04/2026")
         assert "21/04/2026" not in dias
 
     def test_exclui_natal(self):
         """25/12 = Natal — feriado nacional fixo (2026 = sexta-feira)."""
-        pytest.importorskip("bizdays")
         dias = ettj.listar_dias_uteis("24/12/2026", "26/12/2026")
         assert "25/12/2026" not in dias
 
     def test_exclui_sete_setembro(self):
         """07/09 = Independência — feriado nacional fixo (2026 = segunda-feira)."""
-        pytest.importorskip("bizdays")
         dias = ettj.listar_dias_uteis("05/09/2026", "09/09/2026")
         assert "07/09/2026" not in dias
 
-    def test_fallback_sem_bizdays(self, monkeypatch):
-        """Sem bizdays: deve retornar lista sem fins de semana e emitir UserWarning."""
+    def test_fallback_sem_fonte_de_feriados(self, tmp_path, monkeypatch):
+        """Sem nenhuma fonte de feriados: exclui só fins de semana e avisa."""
         import pyettj.ettj as ettj_mod
 
-        monkeypatch.setattr(ettj_mod, "_BIZDAYS_DISPONIVEL", False)
-        with pytest.warns(UserWarning, match="bizdays"):
-            dias = ettj_mod.listar_dias_uteis("06/04/2026", "10/04/2026")
-        assert len(dias) == 5  # seg a sex, sem feriados
+        monkeypatch.setattr(ettj_mod, "_CACHE_FERIADOS", tmp_path / "cache.csv")
+        monkeypatch.setattr(ettj_mod, "_FERIADOS_PACOTE", tmp_path / "pacote.csv")
+        monkeypatch.setattr(
+            ettj_mod,
+            "_baixar_feriados_anbima",
+            lambda proxies=None: (_ for _ in ()).throw(OSError("sem rede")),
+        )
+        with pytest.warns(UserWarning, match="feriados nacionais"):
+            dias = ettj_mod.listar_dias_uteis("05/09/2026", "09/09/2026")
+        assert "07/09/2026" in dias  # feriado não detectável sem calendário
+
+    def test_feriado_excluido_sem_dependencia_externa(self):
+        """Regressão: 07/09 era retornado quando bizdays não estava instalado."""
+        dias = ettj.listar_dias_uteis("31/08/2026", "08/09/2026")
+        assert "07/09/2026" not in dias
+        assert len(dias) == 6
 
     def test_calendario_cache_reutilizado(self, tmp_path, monkeypatch):
         """O cache de feriados em _CACHE_FERIADOS deve ser respeitado entre chamadas."""
-        pytest.importorskip("bizdays")
         import pyettj.ettj as ettj_mod
 
         monkeypatch.setattr(ettj_mod, "_CACHE_FERIADOS", tmp_path / "Feriados.csv")
@@ -297,9 +305,16 @@ class TestListarDiasUteis:
         assert dias1 == dias2
 
     def test_resultado_ordenado(self):
-        """A lista retornada deve estar em ordem crescente."""
-        dias = ettj.listar_dias_uteis("01/04/2026", "09/04/2026")
-        assert dias == sorted(dias)
+        """A lista deve estar em ordem cronológica, inclusive cruzando meses.
+
+        sorted() sobre 'dd/mm/yyyy' é lexicográfico e colocaria 31/08 no fim.
+        """
+        from datetime import datetime as _dt
+
+        dias = ettj.listar_dias_uteis("28/08/2026", "04/09/2026")
+        datas = [_dt.strptime(d, "%d/%m/%Y") for d in dias]
+        assert datas == sorted(datas)
+        assert dias[0] == "28/08/2026"
 
     def test_aceita_proxies_sem_falhar(self):
         """Passar proxies=None não deve causar erro."""
