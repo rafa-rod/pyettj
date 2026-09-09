@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyettj"
-version = "0.4.1"
+version = "0.4.2"
 description = "Coletar, tratar dados de curvas de juros (ettj) com dados da B3 e ANBIMA e modelar curvas com nielson-svensson e HJM"
 authors = ["Rafael Rodrigues <rafael.rafarod@gmail.com>"]
 license = "MIT"

@@ -1,3 +1,3 @@
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 
-print("pyettj {}".format(__version__))
+print(f"pyettj {__version__}")
