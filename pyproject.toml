@@ -34,7 +34,6 @@ numpy = ">=1.26.0"
 scipy = ">=1.13.1"
 matplotlib = ">=3.10.0"
 urllib3 = "^2.6.3"
-bizdays = {version = ">=0.14", optional = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.2"
@@ -51,9 +50,6 @@ source = ["src/pyettj"]
 
 [tool.setuptools.package-data]
 pyettj = ["Feriados.csv"]
-
-[tool.poetry.extras]
-holidays = ["bizdays"]
 
 [tool.coverage.report]
 show_missing = true

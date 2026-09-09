@@ -40,12 +40,20 @@ import zipfile
 from datetime import date, datetime, timedelta
 from io import BytesIO
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Set, Union
 
 import pandas as pd
 import requests
 
-warnings.filterwarnings("ignore")
+# Não silenciar warnings globalmente: isso apaga também os avisos emitidos
+# pelo próprio pyettj (ex.: feriados não carregados) e os do código do usuário.
+# Suprimimos apenas o ruído esperado de requisições sem verificação de TLS.
+try:  # pragma: no cover - depende da versão do urllib3
+    from urllib3.exceptions import InsecureRequestWarning
+
+    warnings.simplefilter("ignore", InsecureRequestWarning)
+except ImportError:  # pragma: no cover
+    pass
 
 from pyettj.cache import (
     _cache_ler,
@@ -63,16 +71,6 @@ from pyettj.exceptions import (
     ServerUnavailableError,
     TimeoutError,
 )
-
-# ---------------------------------------------------------------------------
-# bizdays — opcional; usado apenas em listar_dias_uteis
-# ---------------------------------------------------------------------------
-try:
-    import bizdays
-
-    _BIZDAYS_DISPONIVEL = True
-except ImportError:
-    _BIZDAYS_DISPONIVEL = False
 
 # ---------------------------------------------------------------------------
 # Catálogo de curvas disponíveis (extraído do TaxaSwap de 09/04/2026)
@@ -182,72 +180,81 @@ def _filtrar_curvas(df: pd.DataFrame, curvas: List[str]) -> pd.DataFrame:
     return df[df["curva"].isin(curvas)].reset_index(drop=True)
 
 
-def _carregar_calendario(
-    proxies: Optional[Dict] = None,
-) -> "Optional[bizdays.Calendar]":
-    """
-    Tenta carregar o calendário ANBIMA com feriados nacionais.
+def _feriados_de_csv(caminho: Path) -> Set[date]:
+    """Lê um CSV de feriados (uma data ISO por linha) e devolve um set de date.
 
-    Estratégia de fallback (para em caso de sucesso):
+    Linhas não parseáveis (cabeçalho, rodapé 'Fonte: ANBIMA', linhas vazias)
+    são ignoradas silenciosamente.
+    """
+    feriados: Set[date] = set()
+    for linha in caminho.read_text(encoding="utf-8").splitlines():
+        linha = linha.strip().strip('"').strip()
+        if not linha:
+            continue
+        try:
+            feriados.add(datetime.strptime(linha[:10], "%Y-%m-%d").date())
+        except ValueError:
+            continue
+    return feriados
+
+
+def _baixar_feriados_anbima(proxies: Optional[Dict] = None) -> Set[date]:
+    """Baixa os feriados nacionais da ANBIMA e grava o cache local."""
+    r = requests.get(_ANBIMA_HOLIDAYS_URL, proxies=proxies, verify=True, timeout=15)
+    r.raise_for_status()
+
+    df = pd.read_excel(BytesIO(r.content), engine="calamine")
+    fonte_idx = df[df["Data"].astype(str).str.startswith("Fonte")].index
+    datas = df["Data"][: fonte_idx[0]] if len(fonte_idx) > 0 else df["Data"]
+    datas = pd.to_datetime(datas, errors="coerce").dropna()
+
+    feriados = {d.date() for d in datas}
+    if feriados:
+        _CACHE_FERIADOS.parent.mkdir(parents=True, exist_ok=True)
+        _CACHE_FERIADOS.write_text(
+            "\n".join(d.isoformat() for d in sorted(feriados)) + "\n",
+            encoding="utf-8",
+        )
+    return feriados
+
+
+def _carregar_feriados(proxies: Optional[Dict] = None) -> Set[date]:
+    """
+    Carrega os feriados nacionais (calendário ANBIMA).
+
+    Estratégia de fallback (para no primeiro sucesso):
         1. Cache em ~/.pyettj/Feriados.csv  (evita download a cada chamada)
         2. Download do site ANBIMA
         3. Feriados.csv embutido no pacote
-        4. None  (chamador usa apenas fins de semana)
+        4. set() vazio + warning (chamador exclui apenas fins de semana)
 
-    Retorna um bizdays.Calendar ou None se bizdays não estiver instalado
-    ou se nenhuma fonte de feriados estiver acessível.
+    Não depende de bizdays: a exclusão de feriados passa a funcionar em
+    qualquer instalação do pyettj.
     """
-    if not _BIZDAYS_DISPONIVEL:
-        warnings.warn(
-            "[pyettj] bizdays não instalado — feriados nacionais não serão "
-            "excluídos de listar_dias_uteis. "
-            "Instale com: pip install bizdays",
-            UserWarning,
-            stacklevel=3,
-        )
-        return None
-
-    def _montar_cal(caminho: Path) -> "bizdays.Calendar":
-        holidays = bizdays.load_holidays(str(caminho))
-        return bizdays.Calendar(holidays, ["Sunday", "Saturday"], name="Brazil")
-
     # --- Fonte 1: cache local ---
     if _CACHE_FERIADOS.exists():
         try:
-            return _montar_cal(_CACHE_FERIADOS)
-        except Exception:
-            pass  # cache corrompido → tenta download
+            feriados = _feriados_de_csv(_CACHE_FERIADOS)
+            if feriados:
+                return feriados
+        except OSError:
+            pass  # cache ilegível → tenta download
 
     # --- Fonte 2: download ANBIMA ---
     try:
-        r = requests.get(
-            _ANBIMA_HOLIDAYS_URL,
-            proxies=proxies,
-            verify=True,
-            timeout=15,
-        )
-        if r.status_code == 200:
-            df = pd.read_excel(BytesIO(r.content), engine="calamine")
-            fonte_idx = df[df["Data"] == "Fonte: ANBIMA"].index
-            datas = (
-                df["Data"][: fonte_idx[0]].values
-                if len(fonte_idx) > 0
-                else df["Data"].dropna().values
-            )
-            feriados_df = pd.DataFrame(
-                {"Feriados ANBIMA": pd.to_datetime(datas).values}
-            )
-            _CACHE_FERIADOS.parent.mkdir(parents=True, exist_ok=True)
-            feriados_df.to_csv(_CACHE_FERIADOS, index=False, header=False)
-            return _montar_cal(_CACHE_FERIADOS)
+        feriados = _baixar_feriados_anbima(proxies=proxies)
+        if feriados:
+            return feriados
     except Exception:
         pass  # sem rede ou ANBIMA indisponível → próximo fallback
 
     # --- Fonte 3: arquivo embutido no pacote ---
     if _FERIADOS_PACOTE.exists():
         try:
-            return _montar_cal(_FERIADOS_PACOTE)
-        except Exception:
+            feriados = _feriados_de_csv(_FERIADOS_PACOTE)
+            if feriados:
+                return feriados
+        except OSError:
             pass
 
     # --- Fonte 4: nenhuma fonte disponível ---
@@ -258,7 +265,7 @@ def _carregar_calendario(
         UserWarning,
         stacklevel=3,
     )
-    return None
+    return set()
 
 
 def _baixar_raw(
@@ -523,7 +530,8 @@ def listar_dias_uteis(
     -----
     Os feriados são obtidos do site da ANBIMA e armazenados em cache local
     (~/.pyettj/Feriados.csv) para evitar downloads repetidos. Como fallback,
-    usa o arquivo Feriados.csv embutido no pacote.
+    usa o arquivo Feriados.csv embutido no pacote. Não é necessário instalar
+    nenhuma dependência adicional.
 
     Se nenhuma fonte de feriados estiver disponível (sem rede e sem arquivo
     local), um warning é emitido e apenas fins de semana são excluídos.
@@ -541,25 +549,22 @@ def listar_dias_uteis(
     if d_ini > d_fim:
         raise PyETTJError(f"Data inicial ({de}) é posterior à data final ({ate}).")
 
-    cal = _carregar_calendario(proxies=proxies)
+    feriados = _carregar_feriados(proxies=proxies)
 
-    if cal is not None:
-        # bizdays disponível e calendário carregado
-        dias = [
-            d.strftime("%d/%m/%Y")
-            for d in (d_ini + timedelta(n) for n in range((d_fim - d_ini).days + 1))
-            if cal.isbizday(d.strftime("%Y-%m-%d"))
-        ]
-    else:
-        # Fallback: apenas fins de semana
-        dias = []
-        d_atual = d_ini
-        while d_atual <= d_fim:
-            if not _is_fim_de_semana(d_atual):
-                dias.append(d_atual.strftime("%d/%m/%Y"))
-            d_atual += timedelta(days=1)
+    if feriados and d_fim.year > max(feriados).year:
+        warnings.warn(
+            f"[pyettj] O calendário de feriados vai até {max(feriados).year}; "
+            f"datas posteriores considerarão apenas fins de semana.",
+            UserWarning,
+            stacklevel=2,
+        )
 
-    return sorted(dias)
+    dias = [d_ini + timedelta(n) for n in range((d_fim - d_ini).days + 1)]
+    dias = [d for d in dias if not _is_fim_de_semana(d) and d not in feriados]
+
+    # Ordena como data, não como string: 'dd/mm/yyyy' ordenado
+    # lexicograficamente coloca 31/08 depois de 01/09.
+    return [d.strftime("%d/%m/%Y") for d in sorted(dias)]
 
 
 def get_ettj(
